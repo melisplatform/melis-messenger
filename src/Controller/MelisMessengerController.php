@@ -12,8 +12,6 @@ namespace MelisMessenger\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\View\Model\JsonModel;
-use Zend\Filter\Int;
-use MelisMessenger\Model\Tables\MelisMessengerMsgMembersTable;
 
 class MelisMessengerController extends AbstractActionController
 {
