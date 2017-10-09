@@ -31,7 +31,8 @@ class MelisMessengerMsgContentTable extends MelisGenericTable
      * @param unknown $id
      * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
      */
-    public function getNewMessage($id){
+    public function getNewMessage($id)
+    {
         $select = $this->tableGateway->getSql()->select();
         $select->join(array('usr'=>'melis_core_user'), 'usr.usr_id = melis_messenger_msg_content.msgr_msg_cont_sender_id', array('usr_lastname', 'usr_firstname', 'usr_image'));
         $select->join(array('msg'=>'melis_messenger_msg'), 'msg.msgr_msg_id = melis_messenger_msg_content.msgr_msg_id', array());
@@ -51,7 +52,8 @@ class MelisMessengerMsgContentTable extends MelisGenericTable
      * @param unknown $id
      * @return unknown
      */
-    public function getInbox($convoId, $id){
+    public function getInbox($convoId, $id)
+    {
         $select = $this->tableGateway->getSql()->select();
         
         $subSelect = $this->tableGateway->getSql()->select();
@@ -71,5 +73,23 @@ class MelisMessengerMsgContentTable extends MelisGenericTable
         $data = $this->tableGateway->selectWith($select);
         
         return $data;
+    }
+    
+    /**
+     * Function to update message status
+     * @param Array $data
+     * @param Int $convo_id
+     * @param Int $user_id
+     * @return number - Number of affected row
+     */
+    public function updateMessageStatus($data, $convo_id, $user_id)
+    {
+        $update = $this->tableGateway->getSql()->update();
+        $update->set($data);
+        $update->where->equalTo("msgr_msg_id", $convo_id);
+        $update->where->notEqualTo("msgr_msg_cont_sender_id", $user_id);
+        $res = $this->tableGateway->updateWith($update);
+        
+        return $res;
     }
 }

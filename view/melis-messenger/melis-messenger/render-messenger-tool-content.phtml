@@ -11,28 +11,58 @@
         	<div class="btn-group pull-right btn-group-xs">
     			<a class="btn btn-default refresh-chat" data-toggle="tab"><i class="fa fa-refresh"></i></a>
     		</div>
-            <h4 class="heading"><i class="icon-comment-fill-1"></i> Chat</h4>
+            <h4 class="heading"><i class="fa fa-comment"></i> <?=$this->translate('tr_melismessenger_tool_chat')?></h4>
         </div>
         <div class="widget-body padding-none border-bottom">
         	<div id="convo-header"></div>
-            <!-- Slim Scroll -->
-            <div id="chat-container" class="slim-scroll" data-scroll-height="235px" data-scroll-size="0">
+            <div id="chat-container">
                 <!-- Media item -->
                 <!--Display all the conversation here from javascript-->
                 <!-- // Media item END -->
             </div>
-            <!-- // Slim Scroll END -->
         </div>
-        <div class="chat-controls bg-default innerAll half">
-            <div id="chat-form">
-				<?php
-					$form = $this->melismessenger_form;
-					$form->prepare();
-					echo $this->form()->openTag($form); 
-					echo $this->melisFieldCollection($form);
-					echo $this->form()->closeTag(); 
-				?>
-            </div>
+        <div id="chat-form">
+			<?php
+				$form = $this->melismessenger_form;
+				$form->get('msgr_msg_cont_message')->setAttribute('id',$this->idPage.'_msgr_msg_cont_message');
+				$form->prepare();
+				echo $this->form()->openTag($form); 
+				echo $this->melisFieldCollection($form);
+				echo $this->form()->closeTag(); 
+			?>
         </div>
+         <span><small><?=$this->translate('tr_melismessenger_tool_image_note')?></small></span>
     </div> <!-- // Chat END -->
+    <script type="text/javascript">
+        $(document).ready(function() {
+            //we prepare the tinyMce init here to make sure that the form are already loaded
+            melisTinyMCE.createTinyMCE("tool", "textarea#<?php echo $this->idPage.'_msgr_msg_cont_message'?>",
+                {
+                    width : "99.9%",
+                    force_br_newlines : true,
+                    force_p_newlines : false,
+                    toolbar : 'undo redo | styleselect | bold italic | link image',
+                    setup : "messengerTool.melisMessengerTinyMceEvent",
+                    style_formats: [
+                        {title: 'Headers', items: [
+                            {title: 'Header 1', format: 'h1'},
+                            {title: 'Header 2', format: 'h2'},
+                            {title: 'Header 3', format: 'h3'},
+                            {title: 'Header 4', format: 'h4'},
+                            {title: 'Header 5', format: 'h5'},
+                            {title: 'Header 6', format: 'h6'}
+                        ]},
+                        {title: 'Inline', items: [
+                            {title: 'Bold', icon: 'bold', format: 'bold'},
+                            {title: 'Italic', icon: 'italic', format: 'italic'},
+                            {title: 'Underline', icon: 'underline', format: 'underline'},
+                            {title: 'Strikethrough', icon: 'strikethrough', format: 'strikethrough'},
+                            {title: 'Superscript', icon: 'superscript', format: 'superscript'},
+                            {title: 'Subscript', icon: 'subscript', format: 'subscript'},
+                            {title: 'Code', icon: 'code', format: 'code'}
+                        ]},
+                    ]
+                });
+        });
+    </script>
 </div>

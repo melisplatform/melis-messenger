@@ -118,7 +118,7 @@
                             'module' => 'MelisMessenger',
                             'controller' => 'MelisMessenger',
                             'action' => 'header-messenger',
-                            'jscallback' => 'messengerTool.getNewMessage();',
+                            'jscallback' => '',
                             'jsdatas' => array()
                         ),
                     ),

@@ -32,7 +32,7 @@ class MelisMessengerMsgMembersTable extends MelisGenericTable
     {
         $select = $this->tableGateway->getSql()->select();
         $select->columns(array('msgr_msg_id'));
-        $select->where("msgr_msg_mbr_usr_id = $userId");
+        $select->where->equalTo("msgr_msg_mbr_usr_id", $userId);
         $select->group('msgr_msg_id');
         $data = $this->tableGateway->selectWith($select);
         return $data;

@@ -80,9 +80,12 @@ class MelisMessengerController extends AbstractActionController
         
         $arr = array();
         $ids = array();
-        foreach($usersList AS $x){
-            if($x['usr_id'] != $this->getCurrentUserId()){
-                if(!array_key_exists($x['usr_id'], $ids)){
+        foreach($usersList AS $x)
+        {
+            if($x['usr_id'] != $this->getCurrentUserId())
+            {
+                if(!array_key_exists($x['usr_id'], $ids))
+                {
                     $ids[$x['usr_id']] = array();
                     array_push($arr, $x);
                 }
@@ -129,27 +132,33 @@ class MelisMessengerController extends AbstractActionController
         $request = $this->getRequest();
         if($request->isPost())
         {
+            $mbrIds = "";
             $postValues = get_object_vars($request->getPost());
-            //$postValues['msgr_msg_creator_id'] = 1;
-            //$postValues['msgr_msg_date_created'] = date('Y/m/d H:i:s');
-            $msgData = array('msgr_msg_creator_id' => $this->getCurrentUserId(), 'msgr_msg_date_created'   =>  date('Y/m/d H:i:s'));
-            $res = $messengerService->saveMsg($msgData);
-            if($res > 0)
+            $postValues['msgr_msg_creator_id'] = $this->getCurrentUserId();
+            $postValues['msgr_msg_date_created'] = date('Y/m/d H:i:s');
+            //get the selected contact / member of the conversation ids
+            $mbrIds = $postValues['mbrids'];
+            //remove the mbrids in postValue to match the table field from db before saving
+            unset($postValues['mbrids']);
+            
+            $convo_id = $messengerService->saveMsg($postValues);
+            if($convo_id > 0)
             {
                 //Convert string of member id to array
-                $ids = explode(',', $postValues['mbrids']);
+                $ids = explode(',', $mbrIds);
                 //include the creator id to insert
                 array_push($ids, $this->getCurrentUserId());
                 
                 for($i = 0; $i < sizeof($ids); $i++)
                 {
                     //insert the members
-                    $messengerService->saveMsgMembers(["msgr_msg_id"    =>  $res, "msgr_msg_mbr_usr_id" =>  $ids[$i]]);
+                    $messengerService->saveMsgMembers(["msgr_msg_id"    =>  $convo_id, "msgr_msg_mbr_usr_id" =>  $ids[$i]]);
                 }
             }
         }
+        //return the newly created conversation id
         $response = array(
-            'conversationId'   => $res,
+            'conversationId'   => $convo_id,
         );
         return new JsonModel($response);
     }
@@ -182,7 +191,7 @@ class MelisMessengerController extends AbstractActionController
         {
             //get the data
             $postValues = get_object_vars($request->getPost());
-            $postValues = $melisTool->sanitizePost($postValues);
+            $postValues['msgr_msg_cont_message'] = htmlspecialchars($postValues['msgr_msg_cont_message']);
             //assign the data to the form
             $propertyForm->setData($postValues);
             //check if form is valid(if all the form field are match with the value that we pass from routes)
@@ -192,11 +201,13 @@ class MelisMessengerController extends AbstractActionController
                 $postValues['msgr_msg_cont_sender_id']  = $this->getCurrentUserId();
                 $postValues['msgr_msg_cont_date']       =   date('Y-m-d H:i:s');
                 $postValues['msgr_msg_cont_status']     =   "new";
+                
                 //save the message
                 $res = $messengerService->saveMsgContent($postValues);
                 //check if saving is success
                 if($res)
                 {
+                    $postValues['msgr_msg_cont_message']    = htmlspecialchars_decode($postValues['msgr_msg_cont_message']);
                     $postValues['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($postValues['msgr_msg_cont_date']));
                     $msg = "success";
                     $status = 1;
@@ -229,21 +240,16 @@ class MelisMessengerController extends AbstractActionController
         $totalMessages = count($msg->getConversation($id)->toArray());
         
         $convo = $msg->getConversationWithLimit($id, $limit, $offset)->toArray();
-        /*if($totalMessages > $offset)
-        {
-            
-            $tmpMessages   = ($convo);
-            $remainder = $totalMessages - $offset;
-            $convo = array_slice($tmpMessages, $remainder);
-           
-        }*/
+
         if($offset == 0)
             $convo = array_reverse($convo);
         foreach ($convo As $key => $val)
         {
             //check if user image is not empty and convert it to base_64, else just return the default image
             $convo[$key]['usr_image'] = $this->getUserImage($convo[$key]['usr_image']);
+            
             $convo[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($convo[$key]['msgr_msg_cont_date']));
+            $convo[$key]['msgr_msg_cont_message'] = htmlspecialchars_decode($convo[$key]['msgr_msg_cont_message']);
         }
         
         //prepare the data to return
@@ -259,10 +265,13 @@ class MelisMessengerController extends AbstractActionController
      * Get message to display in the messenger notifications
      * @return \Zend\View\Model\JsonModel
      */
-    public function getNewMessageAction(){
+    public function getNewMessageAction()
+    {
         $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
         $message = $msgContent->getNewMessage($this->getCurrentUserId())->toArray();
-        foreach($message AS $key => $val){
+        foreach($message AS $key => $val)
+        {
+            $message[$key]['msgr_msg_cont_message'] = htmlspecialchars_decode($message[$key]['msgr_msg_cont_message']);
             $message[$key]['usr_image'] =  $this->getUserImage($message[$key]['usr_image']);
             $message[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($message[$key]['msgr_msg_cont_date']));
         }
@@ -274,15 +283,40 @@ class MelisMessengerController extends AbstractActionController
     }
     
     /**
+     * Function to update message status
+     * @return \Zend\View\Model\JsonModel
+     */
+    public function updateMessageStatusAction()
+    {
+        $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        //get the request
+        $request = $this->getRequest();
+        $post_var = get_object_vars($request->getPost());
+        $user_id = $this->getCurrentUserId();
+        $res = "";
+        //check if request is post
+        if($request->isPost())
+        {
+            if($post_var['id'] != "")
+            {
+                $arr = array("msgr_msg_cont_status" => "read");
+                $res = $msgContent->updateMessageStatus($arr, $post_var['id'], $user_id);
+            }
+        }
+        $response = array(
+            "result"    =>  $res,
+        );
+        return new JsonModel($response);
+    }
+    
+    /**
      * Get all contacts to put in the inbox list
      * @return \Zend\View\Model\JsonModel
      */
-    public function getInboxListAction(){
+    public function getInboxListAction()
+    {
         $arr = array();
-        $tmpInbox = array();
         $usrInfo = array();
-        $offset = (int) $this->params()->fromQuery('offset', 0);
-        $limit = (int) $this->params()->fromQuery('limit', 10);
         $totalInbox = 0;
         //get current user id
         $userId  = $this->getCurrentUserId();
@@ -321,7 +355,7 @@ class MelisMessengerController extends AbstractActionController
                     $isOnline = $inboxList[$key]['usr_is_online'];
                     $image = $this->getUserImage($inboxList[$key]['usr_image']);
                     $contact_id = $inboxList[$key]['usr_id'];
-                    $message = $inboxList[$key]['msgr_msg_cont_message'];
+                    $message = htmlspecialchars_decode($inboxList[$key]['msgr_msg_cont_message']);
                     //push the contact information to the array
                     array_push($usrInfo, array("name"=>$name, "isOnline"=>$isOnline, "image"=>$image, "message"=>$message));
                     //get the ready the data to be return
@@ -332,23 +366,8 @@ class MelisMessengerController extends AbstractActionController
             }
         }
 
-        /**
-         * get the result depending on the offset value
-         */
-        if($offset != 0)
-        {
-            $offset += 1;
-        }
-        
-        if($totalInbox > $offset)
-        {
-            $tmpInbox   = array_values($arr);
-            $remainder = $totalInbox - $offset;
-        }
-        
-        $arr = (!empty($tmpInbox)) ? array_slice($tmpInbox, $offset, $limit) : array() ;
         $response = array(
-            'data'          =>  $arr,
+            'data'          =>  array_values($arr),
             'totalInbox'    =>  $totalInbox,
         );
         return new JsonModel($response);
@@ -358,7 +377,8 @@ class MelisMessengerController extends AbstractActionController
      * Function to get the messenger time interval in the config file
      * @return \Zend\View\Model\JsonModel
      */
-    public function getMsgTimeIntervalAction(){    
+    public function getMsgTimeIntervalAction()
+    {    
         $config = $this->getServiceLocator()->get('config');
         $msgrConfig = $config['plugins']['meliscore']['datas']['default']['messenger']['msg_interval'];
         $response = array(
@@ -425,7 +445,8 @@ class MelisMessengerController extends AbstractActionController
     {
         $userId = null;
         $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
-        if($melisCoreAuth->hasIdentity()) {
+        if($melisCoreAuth->hasIdentity())
+        {
             $userAuthDatas =  $melisCoreAuth->getStorage()->read();
             $userId = (int) $userAuthDatas->usr_id;
         }

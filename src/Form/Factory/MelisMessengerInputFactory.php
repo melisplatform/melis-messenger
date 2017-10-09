@@ -9,18 +9,15 @@
 
 namespace MelisMessenger\Form\Factory; 
 
-use Zend\Form\Element\Text;
+use Zend\Form\Element\Textarea;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\ServiceManager\FactoryInterface;
 
-/**
- * Melis Calendar Draggble Input Input Element
- */
-class MelisMessengerInputFactory extends Text implements FactoryInterface
+class MelisMessengerInputFactory extends Textarea implements FactoryInterface
 {
     public function createService(ServiceLocatorInterface $formElementManager)
     { 
-        $element = new Text;
+        $element = new Textarea;
         // Removing label of the form element
         $element->setLabel('');
         // added attribute

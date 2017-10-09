@@ -11,24 +11,22 @@
         		<div class="btn-group pull-right btn-group-xs">
         			<a class="btn btn-default refresh-inbox" data-toggle="tab"><i class="fa fa-refresh"></i></a>
         		</div>
-        		<span class="heading"><i class="fa fa-inbox"></i> Inbox</span>
+        		<span class="heading"><i class="fa fa-inbox"></i> <?=$this->translate('tr_melismessenger_tool_inbox')?></span>
         	</div>
         	<div class="clearfix"></div>
         	<div class="inbox-select-contacts">
-                <div class="border-bottom">
-            	    <div class="row row-app">
-                        <div class="col-md-8">
-                        	<select id="selectUsers" multiple class="form-control">
-                            	<?php foreach ($this->users AS $u): ?>
-                            		<option value="<?= $u['usr_id'] ?>"><?= $u['usr_firstname']." ".$u['usr_lastname']; ?></option>
-                            	<?php endforeach;  ?>
-                    		</select>
-                            <!-- // END col-separator -->
-                        </div>
-                        <!-- // END col -->
-                        <div class="col-md-4">
-                            <button class="btn btn-success btn-stroke" id="compose-convo" type="button"><i class="fa fa-plus"></i> <?=$this->translate('tr_melismessenger_tool_create_button'); ?></button>
-                        </div>
+        	    <div class="row row-app">
+                    <div class="col-md-8">
+                    	<select id="selectUsers" multiple class="form-control">
+                        	<?php foreach ($this->users AS $u): ?>
+                        		<option value="<?= $u['usr_id'] ?>"><?= $u['usr_firstname']." ".$u['usr_lastname']; ?></option>
+                        	<?php endforeach;  ?>
+                		</select>
+                        <!-- // END col-separator -->
+                    </div>
+                    <!-- // END col -->
+                    <div class="col-md-4">
+                        <button class="btn btn-success btn-stroke" id="compose-convo" type="button"><i class="fa fa-plus"></i> <?=$this->translate('tr_melismessenger_tool_create_button'); ?></button>
                     </div>
                 </div>
             </div>

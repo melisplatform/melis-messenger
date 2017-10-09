@@ -55,7 +55,6 @@ return array(
                                 'attributes' => array(
                                     'id' => 'msgr_msg_cont_message',
                                     'value' => '',
-                                    'placeholder' => 'tr_melismessenger_tool_input_placeholder',
                                     'required' => 'required',
                                 ),
                             ),

@@ -1,77 +1,185 @@
-#chat-container{
-    height: 579px;
-    overflow-y: auto;
-}
-.widget-chat .media small.author{
-	width:auto !important;
-}
-#convo-msg{
-	text-align:center;
-	padding:20px;
-}
 #id_melismessenger_tool{
 	overflow:hidden;
 }
-#convo-header #convo-header-content{
-	padding:20px;
-	text-align:center;
-	width:100%;
-	border-bottom:1px solid #ebebeb;
+
+
+#convo-content #chat-container{
+    height: 455px;
+    overflow-y: auto;
 }
-#id_melismessenger_tool_content .widget-chat{
-	height:740px;
-}
-#inbox-container{
-	overflow-y:auto !important;
-}
-#load-more-msg{
-	width:100%;
-	text-align:center;
-}
-#compose-convo{
-	width:100%;
-	margin:auto;
-}
-#inbox-container{
-	overflow: hidden !important;
-}
-#inbox-header{
-	width:100%;
-	background:#424242;
-	padding:10px;
-	color:#fff;
-}
-#inbox-list{
-	max-height: 645px;
-	overflow: auto;
-}
-#inbox-list .thumb.pull-left{
-	margin-top:-6px;
-}
-.inbox-select-contacts {
-	margin-top: 10px;
-}
-#chat-container .my-msg{
+
+
+#convo-content #chat-container .my-msg{
 	background: #932e2a;
     border-radius: 17px;
     color: #fff;
     padding: 10px;
 }
+
+
+#convo-content #chat-container .my-msg a{
+	color: #ffffff;
+}
+
+
+#convo-content .chat-contact-msg{
+	margin-top: 30px;
+	padding: 10px;
+}
+
+
+#convo-content .chat-contact-msg img{
+	max-width: 100%;
+	height: auto;
+}
+
+
+#convo-content .chat-contact-name{
+	position: absolute;
+    left: 75px;
+    top: 35px;
+}
+
+
+.widget-chat .media small.author{
+	width:auto !important;
+}
+
+
+#convo-content #convo-msg{
+	text-align:center;
+	padding:20px;
+}
+
+
+#convo-content #convo-header #convo-header-content{
+	padding:20px;
+	text-align:center;
+	width:100%;
+	border-bottom:1px solid #ebebeb;
+}
+
+
+#id_melismessenger_tool_content .widget-chat{
+	max-height:738px;
+}
+
+
+#convo-content #load-more-msg{
+	width:100%;
+	text-align:center;
+}
+
+
+#compose-convo{
+	width:100%;
+	margin:auto;
+}
+
+
+#inbox-container{
+	overflow: hidden !important;
+}
+
+
+#inbox-container #inbox-header{
+	width:100%;
+	background:#424242;
+	padding:10px;
+	color:#fff;
+}
+
+
+#inbox-container #inbox-list{
+	max-height: 645px;
+	overflow: auto;
+}
+
+
+#inbox-container #inbox-list .selectContact{
+	cursor: pointer;
+	display: none;
+}
+
+
+#inbox-container #inbox-list .thumb.pull-left{
+	margin-top:-6px;
+}
+
+
+#inbox-container .inbox-select-contacts {
+	margin-top: 10px;
+}
+
+
 #melis-messenger-messages{
 	width: 270px;
 	max-height: 250px;
 	overflow: auto;
 }
+
+
 #melis-messenger-messages li{
 	padding: 10px;
 }
+
+
 #melis-messenger-messages img{
 	margin-top: 18px;
 }
-#messenger-msg{
+
+
+#messenger-msg-cont{
+	max-height: 25px;
+    overflow: hidden;
+}
+
+
+#messenger-msg-cont #messenger-msg{
 	display: inline-block;
     width: 180px;
     white-space: nowrap;
     overflow: hidden !important;
     text-overflow: ellipsis;
+	margin-top: -15px;
+}
+
+
+#inbox-list #show-empty-inbox{
+	text-align: center;
+}
+
+
+#inbox-list #messenger-msg-cont #messenger-msg{
+	margin-top: 0px !important;
+}
+
+
+#inbox-list #messenger-msg-cont #messenger-msg blockquote,
+#inbox-list #messenger-msg-cont #messenger-msg pre{
+	margin-top: -9px !important;
+}
+
+
+#messenger-msg-cont span#messenger-msg img{
+	width: 20px !important;
+	height: 20px !important;
+	border-radius: 100%;
+}
+
+
+.glyphicons.comments.cs-fa i:before {
+    font-family: "Fontawesome";
+	content: "\f075";
+}
+
+
+@media only screen and (min-width: 992px) and (max-width: 1375px) {
+	#compose-convo{
+		font-size: 0px;
+	}
+
+	#compose-convo i {
+		font-size: 15px;
+	}
 }

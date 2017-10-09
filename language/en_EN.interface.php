@@ -1,7 +1,6 @@
 <?php
     return array(
         'tr_melismessenger_tool_name'                                   =>  'Messenger',
-        'tr_melistoolmessenger_tool_description'                        =>  'This allow ......',
         'tr_melismessenger_tool_input_placeholder'                      =>  'Type your message..',
         'tr_melistoolmesseger_tool_input_empty'                         =>  'Please insert message.',
         'tr_melismessenger_tool_empty_conversation'                     =>  'No conversation to display.',
@@ -12,4 +11,9 @@
         'tr_melismessenger_tool_no_more_msg_to_load'                    =>  'No more message to load.',
         'tr_melismessenger_tool_inbox_is_empty'                         =>  'Inbox is Empty',
         'tr_melismessenger_tool_new_message'                            =>  'New Message to',
+        'tr_melismessenger_tool_inbox'                                  =>  'Inbox',
+        'tr_melismessenger_tool_chat'                                   =>  'Chat',
+        'tr_melismessenger_tool_no_message_notification'                => 'You don\'t have any message at this moment',
+        'tr_melismessenger_tool_image_note'                             => 'Note: All the images are accessible on the media, everyone can see it',
+        'tr_melismessenger_tool_user_is_deleted'                        => 'This user has been deleted.',
     );

@@ -33,9 +33,9 @@ class MelisMessengerMsgTable extends MelisGenericTable
      */
     public function getConversationWithLimit($id, $limit, $offset){
         $select = $this->tableGateway->getSql()->select();
-        $select->join(array('content'=>'melis_messenger_msg_content'), 'content.msgr_msg_id = melis_messenger_msg.msgr_msg_id');
-        $select->join(array('user'=>'melis_core_user'), 'user.usr_id = content.msgr_msg_cont_sender_id', array('usr_lastname', 'usr_firstname', 'usr_image'));
-        $select->where("melis_messenger_msg.msgr_msg_id = $id");
+        $select->join(array('content'=>'melis_messenger_msg_content'), 'content.msgr_msg_id = melis_messenger_msg.msgr_msg_id', array('*'), $select::JOIN_LEFT);
+        $select->join(array('user'=>'melis_core_user'), 'user.usr_id = content.msgr_msg_cont_sender_id', array('usr_lastname', 'usr_firstname', 'usr_image'), $select::JOIN_LEFT);
+        $select->where->equalTo("melis_messenger_msg.msgr_msg_id", $id);
         $select->offset($offset);
         $select->limit($limit);
         $select->order("content.msgr_msg_cont_date DESC");
@@ -54,7 +54,7 @@ class MelisMessengerMsgTable extends MelisGenericTable
         $select = $this->tableGateway->getSql()->select();
         $select->join(array('content'=>'melis_messenger_msg_content'), 'content.msgr_msg_id = melis_messenger_msg.msgr_msg_id');
         $select->join(array('user'=>'melis_core_user'), 'user.usr_id = content.msgr_msg_cont_sender_id', array('usr_lastname', 'usr_firstname', 'usr_image'));
-        $select->where("melis_messenger_msg.msgr_msg_id = $id");
+        $select->where->equalTo("melis_messenger_msg.msgr_msg_id", $id);
         
         $data = $this->tableGateway->selectWith($select);
         return $data;
@@ -68,7 +68,7 @@ class MelisMessengerMsgTable extends MelisGenericTable
     public function getConversationIdByUserId($userId){
         $select = $this->tableGateway->getSql()->select();
         $select->columns(array('msgr_msg_id'));
-        $select->where("msgr_msg_creator_id = $userId");
+        $select->where->equalTo("msgr_msg_creator_id", $userId);
         $data = $this->tableGateway->selectWith($select);
         return $data;
     }
