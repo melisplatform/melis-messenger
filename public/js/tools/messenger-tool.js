@@ -332,7 +332,7 @@ var messengerTool = (function(window){
 						}
 						msgrDetectScroll = true;
 					} else {
-						if (getChatContainer().find('.media').length !== 0) {
+						if (getChatContainer().find('.media').length != 0) {
 							//re position the scroll bar
                             getChatContainer().scrollTop(msgrLastMsg.offset().top - msgrCurOffset);
 						}
