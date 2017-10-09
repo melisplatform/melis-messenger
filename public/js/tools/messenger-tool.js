@@ -206,9 +206,9 @@ var messengerTool = (function(window){
 		    			msgrLastMsg = $('#chat-container .media:first');
 		    			//store the current offset
 		    			msgrCurOffset = msgrLastMsg.offset().top - getChatContainer().scrollTop();
+                        msgrMsgOffset = Number(msgrMsgOffset + 9);
+                        getConversation(false, msgrConversationId, "prepend", msgrMsgOffset);
 	    			}
-	        		msgrMsgOffset = Number(msgrMsgOffset + 9);
-	        		getConversation(false, msgrConversationId, "prepend", msgrMsgOffset);
 	    		}else{
 	    			//remove load-more-msg notification
                     getChatContainer().find('#load-more-msg').remove();
