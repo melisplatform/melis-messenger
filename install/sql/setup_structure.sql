@@ -12,7 +12,7 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `melis_messenger_msg` ;
 
-CREATE TABLE IF NOT EXISTS `melisv2`.`melis_messenger_msg` (
+CREATE TABLE IF NOT EXISTS `melis_messenger_msg` (
   `msgr_msg_id` INT NOT NULL AUTO_INCREMENT,
   `msgr_msg_creator_id` INT NOT NULL,
   `msgr_msg_date_created` DATETIME NOT NULL,
