@@ -38,11 +38,8 @@
             //we prepare the tinyMce init here to make sure that the form are already loaded
             melisTinyMCE.createTinyMCE("tool", "textarea#<?php echo $this->idPage.'_msgr_msg_cont_message'?>",
                 {
-                    width : "99.9%",
-                    force_br_newlines : true,
-                    force_p_newlines : false,
+                    width : "99.6%",
                     toolbar : 'undo redo | styleselect | bold italic | link image',
-                    setup : "messengerTool.melisMessengerTinyMceEvent",
                     style_formats: [
                         {title: 'Headers', items: [
                             {title: 'Header 1', format: 'h1'},

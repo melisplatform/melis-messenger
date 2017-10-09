@@ -2,6 +2,9 @@
 	overflow:hidden;
 }
 
+#id_melismessenger_tool_content #sendMsgForm #btn-send-message{
+	height: 176px;
+}
 
 #convo-content #chat-container{
     height: 455px;
@@ -38,6 +41,7 @@
 	position: absolute;
     left: 75px;
     top: 35px;
+    color: #932e2a;
 }
 
 
