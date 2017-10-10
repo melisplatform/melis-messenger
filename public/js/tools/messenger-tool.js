@@ -3,8 +3,9 @@ var messengerTool = (function(window){
 	var msgrBody = $('body');
 	var msgrConversationId = 0; //conversation id
 	var msgrMsgOffset = 0; //message offset - starts 0 to retrieve data in the database
-	var msgrTotalMsg = 0; //total number of message retrieve
+	var msgrTotalMsg = 0; //total number of conversation message retrieve
 	var msgrTotalInboxList = 0; //total number of inbox retrieve
+	var msgrTotalNotificationMsg = 0; //total number of notification message
 	var msgrDetectScroll = true; //specify if detecting scroll is allowed in the chat container
 	var msgrLastMsg = {}; //get the last message on the container to use as a marker when we scroll to get more message
 	var msgrCurOffset = 0; //get the chat container offset so that we can position the chat container scroll correctly if we load more
@@ -17,6 +18,7 @@ var messengerTool = (function(window){
     var msgrContactFound = false; //use to detect if we the selected is already in the inbox
     var tempConversationId = 0; //store the conversation id temporarily
 	var msgrInboxDefaultDisplayNo = 10; //default number of inbox to display
+    var msgrLoadTheInbox = false; //used to detect when there is new message and need the inbox to load
 	
 	//set the interval for checking of new message
 	setMsgrTimeInterval();
@@ -46,6 +48,8 @@ var messengerTool = (function(window){
     	//check if we select the same contact, so that we will not going to request again
     	if(msgrConversationId != $(this).attr('data-convo-id'))
     	{
+            //set total number of message to 0
+            msgrTotalMsg = 0;
     		//specify if we allow to detect scroll
     		msgrDetectScroll = false;
 	        //store the selected conversation id
@@ -58,10 +62,10 @@ var messengerTool = (function(window){
 	    	msgrMsgOffset = 0;
 	    	//display conversation
 	    	getConversation(false, msgrConversationId);
-	    	//update the message if theres is a new message and refresh the message notifcation area
-    		$.post('/melis/MelisMessenger/MelisMessenger/updateMessageStatus',{"id": msgrConversationId}, function(){
-    			getNewMessage();
-    		});
+            //update the message status and refresh the message notification
+            $.post('/melis/MelisMessenger/MelisMessenger/updateMessageStatus', {"id": msgrConversationId}, function () {
+                getNewMessage(false);
+            });
     	}
         e.preventDefault();
     });
@@ -98,7 +102,9 @@ var messengerTool = (function(window){
 	    								  		'</div>'
 	    								  	);
 	    	    	msgrContactFound = true;
-	    			getConversation(false, msgrConversationId);
+                    //set total number of message to 0
+                    msgrTotalMsg = 0;
+                    getConversation(false, msgrConversationId);
                     msgrSelectedContactname = "";
                     msgrSelectedContactId = 0;
 	    			return false;
@@ -107,7 +113,6 @@ var messengerTool = (function(window){
     		//create new conversation with user selected contact
     		if(!msgrContactFound){
                 var html = "";
-
     			msgrBody.find('#show-empty-inbox').remove();
     			msgrIsNewConvo = true;
                 //construct html data for the newly selected contact
@@ -133,6 +138,7 @@ var messengerTool = (function(window){
     			//disable the button create
     			$(this).prop('disabled', true);
         	}
+        	msgrContactFound = false;
     	}
     	e.preventDefault();
     });
@@ -207,6 +213,7 @@ var messengerTool = (function(window){
 		    			//store the current offset
 		    			msgrCurOffset = msgrLastMsg.offset().top - getChatContainer().scrollTop();
                         msgrMsgOffset = Number(msgrMsgOffset + 9);
+                        msgrTotalMsg = 0;
                         getConversation(false, msgrConversationId, "prepend", msgrMsgOffset);
 	    			}
 	    		}else{
@@ -250,26 +257,28 @@ var messengerTool = (function(window){
      * and update the message status to read
      */
     msgrBody.on('click', '#melis-messenger-messages li', function(){
-    	msgrMsgOffset = 0;
-    	var _temp_convo_id = $(this).attr('data-convo-id');
-        msgrConversationId = (_temp_convo_id != undefined) ? _temp_convo_id : 0;
-    	//check if user profile is already open
-    	if($('#id_melismessenger_tool').is(':visible') && msgrConversationId != 0){
-	        //specify if we allow to detect scroll
-    		msgrDetectScroll = false;
-	    	//empty the container
-	    	emptyChatContainer();
-	        //display select contact name
-	    	setConversationHeader(msgrConversationId);
-	    	//display conversation
-	    	getConversation(false, msgrConversationId);
-            //update the message status and refresh the message notification
-            $.post('/melis/MelisMessenger/MelisMessenger/updateMessageStatus',{"id": msgrConversationId}, function(){
-                getNewMessage();
-            });
-    	}else{
-            openMessengerTab();
-    	}
+        msgrMsgOffset = 0;
+        var _temp_convo_id = $(this).attr('data-convo-id');
+    	$.when(openMessengerTab()).then(function(){
+            if(_temp_convo_id != undefined) {
+                msgrTotalMsg = 0;
+                //set conversation id
+                msgrConversationId = _temp_convo_id;
+                //specify if we allow to detect scroll
+                msgrDetectScroll = false;
+                //empty the container
+                emptyChatContainer();
+                //display select contact name
+                setConversationHeader(msgrConversationId);
+                //display conversation
+                getConversation(false, msgrConversationId);
+
+                //update the message status and refresh the message notification
+                $.post('/melis/MelisMessenger/MelisMessenger/updateMessageStatus', {"id": msgrConversationId}, function () {
+                    getNewMessage();
+                });
+            }
+        });
     });
     
 	/**
@@ -279,39 +288,43 @@ var messengerTool = (function(window){
 		$.get('/melis/MelisMessenger/MelisMessenger/getInboxList', function(data){
 	        var html = "";
 	        if(data.data.length > 0){
-	        	//store total number of inbox data
-	        	msgrTotalInboxList = data.totalInbox;
-	        	//process the data
-		        $.each(data, function(key, val){
-					for(var i = 0; i < val.length; i++){
-					    var name = (val[i]['contact_id'] != null) ? val[i].usrInfo[0]['name'] : "(This user has beed deleted.)" ;
-						html = 	"<div class='list-group-item selectContact' data-contact-id="+val[i]['contact_id']+" data-convo-id="+val[i]['msgr_msg_id']+">";
-						html += "<span class='media'>";
-						//check if conversation has many members
-						if(val[i].usrInfo.length > 1){
-							//loop to each user(preparation for group messages)
-							for(var x = 0; x < val[i].usrInfo.length; x++){
-								html += "<span class='media-msgrBody media-msgrBody-inline'>";
-								html += "<label class='user-name'>"+((x == 0) ? '' : ', ')+(name)+"<i class='icon-flag text-primary icon-2x'></i></label>";
-								html += "</span>";
-							}
-						}else{
-							html += "<img src="+(val[i].usrInfo[0]['image'])+" alt='' width='35' class='thumb img-responsive img-circle pull-left' />";
-							html += "<span class='media-msgrBody media-msgrBody-inline'>";
-								html += "<span class='" + ((val[i].usrInfo[0]['isOnline'] != 0 && val[i].usrInfo[0]['isOnline'] != null) ? 'text-success pull-right' : 'text-danger pull-right') + "'><i class='fa fa-fw fa-circle'></i></span>";
-								html += "<label class='user-name'>"+(name)+"<i class='icon-flag text-primary icon-2x'></i></label>";
-								html += "<div id='messenger-msg-cont'><span id='messenger-msg'><small>"+(val[i].usrInfo[0]['message'])+"</small></span></div>";
-							html +="</span>";
-						}
-						html +="</span>";
-	    				html +="</div>";
-                        getInboxListContainer().append(html);
-					}
-		        });
-		        //show list of inbox
-                $('#inbox-list div.selectContact:lt('+msgrInboxDefaultDisplayNo+')').show();
-
-                setConversationHeader(msgrConversationId);
+                //check for new message in the inbox
+	        	if(msgrTotalInboxList != data.totalInbox || msgrLoadTheInbox) {
+                    getInboxListContainer().empty();
+                    //store total number of inbox data
+                    msgrTotalInboxList = data.totalInbox;
+                    //process the data
+                    $.each(data, function (key, val) {
+                        for (var i = 0; i < val.length; i++) {
+                            var name = (val[i]['contact_id'] != null) ? val[i].usrInfo[0]['name'] : "(This user has beed deleted.)";
+                            html = "<div class='list-group-item selectContact' data-contact-id=" + val[i]['contact_id'] + " data-convo-id=" + val[i]['msgr_msg_id'] + ">";
+                            html += "<span class='media'>";
+                            //check if conversation has many members
+                            if (val[i].usrInfo.length > 1) {
+                                //loop to each user(preparation for group messages)
+                                for (var x = 0; x < val[i].usrInfo.length; x++) {
+                                    html += "<span class='media-msgrBody media-msgrBody-inline'>";
+                                    html += "<label class='user-name'>" + ((x == 0) ? '' : ', ') + (name) + "<i class='icon-flag text-primary icon-2x'></i></label>";
+                                    html += "</span>";
+                                }
+                            } else {
+                                html += "<img src=" + (val[i].usrInfo[0]['image']) + " alt='' width='35' class='thumb img-responsive img-circle pull-left' />";
+                                html += "<span class='media-msgrBody media-msgrBody-inline'>";
+                                html += "<span class='" + ((val[i].usrInfo[0]['isOnline'] != 0 && val[i].usrInfo[0]['isOnline'] != null) ? 'text-success pull-right' : 'text-danger pull-right') + "'><i class='fa fa-fw fa-circle'></i></span>";
+                                html += "<label class='user-name'>" + (name) + "<i class='icon-flag text-primary icon-2x'></i></label>";
+                                html += "<div id='messenger-msg-cont'><span id='messenger-msg'><small>" + (val[i].usrInfo[0]['message']) + "</small></span></div>";
+                                html += "</span>";
+                            }
+                            html += "</span>";
+                            html += "</div>";
+                            getInboxListContainer().append(html);
+                        }
+                    });
+                    //show list of inbox
+                    $('#inbox-list div.selectContact:lt(' + msgrInboxDefaultDisplayNo + ')').show();
+                    setConversationHeader(msgrConversationId);
+                    msgrLoadTheInbox = false;
+                }
 	        }else{
 	        	getInboxListContainer().html('<p id="show-empty-inbox">'+translations.tr_melismessenger_tool_inbox_is_empty+'</p>');
 	        }
@@ -328,28 +341,37 @@ var messengerTool = (function(window){
     		//get the messages
     		$.get('/melis/MelisMessenger/MelisMessenger/getConversation/'+msgrConversationId,{'offset': offset}, function(data){
 				 if(data.data.length > 0){
-					//display data
-					displayConversation(data.data, data.user_id, type);
-					//store total number of message
-					msgrTotalMsg = data.total;
-					//position the scrollbar
-                     if(getChatContainer().find('.media').length != 0) {
-                         if (offset < 9) {
-                             if (timeOut) {
-                                 //we must set a timeout to make sure that all the data are already displayed, before we check for the scroll position
-                                 setTimeout(function () {
-                                     getChatContainer().scrollTop(getChatContainer()[0].scrollHeight);
-                                 }, 200);
-                             } else {
-                                 getChatContainer().scrollTop(getChatContainer()[0].scrollHeight);
-                             }
-                             msgrDetectScroll = true;
-                         } else {
-                             //re position the scroll bar
-                             getChatContainer().scrollTop(msgrLastMsg.offset().top - msgrCurOffset);
+                    //check if there is new message
+                     if(msgrTotalMsg != data.total) {
+                         //empty the chat container if we append the data
+                         if(type == "append"){
+                             emptyChatContainer();
                          }
+                         //display data
+                         displayConversation(data.data, data.user_id, type);
+                         //store total number of message
+                         msgrTotalMsg = data.total;
+                         //position the scrollbar
+                         if (getChatContainer().find('.media').length != 0) {
+                             if (offset < 9) {
+                                 if (timeOut) {
+                                     //we must set a timeout to make sure that all the data are already displayed, before we check for the scroll position
+                                     setTimeout(function () {
+                                         getChatContainer().scrollTop(getChatContainer()[0].scrollHeight);
+                                     }, 200);
+                                 } else {
+                                     getChatContainer().scrollTop(getChatContainer()[0].scrollHeight);
+                                 }
+                                 msgrDetectScroll = true;
+                             } else {
+                                 //re position the scroll bar
+                                 getChatContainer().scrollTop(msgrLastMsg.offset().top - msgrCurOffset);
+                             }
+                         }
+                         msgrLoadTheInbox = true;
+                         setConversationHeader(msgrConversationId);
                      }
-					setConversationHeader(msgrConversationId);
+
 				 }else{
                      getChatContainer().html('<div id="convo-msg"><label>'+translations.tr_melismessenger_tool_empty_conversation+'</label></div>');
 				 }
@@ -426,8 +448,6 @@ var messengerTool = (function(window){
                     getInboxListContainer().empty();
 	    	        //execute the saving of conversation
 	    	        executeSave($('#sendMsgForm').serialize());
-	    	        //clear the field and enable the button create
-                    $('#selectUsers').tokenize2().trigger('tokenize:clear');
                     $('#compose-convo').prop('disabled', false);
                     //load the inbox
 	    	        setTimeout(function(){
@@ -441,6 +461,8 @@ var messengerTool = (function(window){
 				executeSave(datas);
 			}
 		}
+        //clear the field and enable the button create
+        $('#selectUsers').tokenize2().trigger('tokenize:clear');
 	}
 	
 	/**
@@ -469,11 +491,11 @@ var messengerTool = (function(window){
 	/**
 	 * Function to get new message to notify the user
 	 */
-	function getNewMessage(){
+	function getNewMessage(showNoti){
+	    showNoti = (showNoti != undefined) ? showNoti : true;
 		$.get('/melis/MelisMessenger/MelisMessenger/getNewMessage', function(data){
 			var ctr = 0;//count all message
 			var tempData = '';
-			
 			if(data.messages.length >  0) {
 				msgrBody.find("#melis-messenger-messages").removeClass("empty-notif");
                 msgrBody.find("#melis-messenger-messages").prev().find(".badge").removeClass("hidden");
@@ -484,31 +506,37 @@ var messengerTool = (function(window){
                             '<li id="'+(msg.msgr_msg_cont_id)+'" data-convo-id="'+(msg.msgr_msg_id)+'">' +
                             '	<img src="'+(msg.usr_image)+'" alt="" width="45" class="thumb img-responsive img-circle pull-left" />' +
                             '    <span class="media-msgrBody media-msgrBody-inline">' +
-                            '        <span class="pull-right"><small>'+(msg.msgr_msg_cont_date)+'</small></span> '+
-                            '        <label class="user-name">'+(msg.usr_firstname+" "+msg.usr_lastname)+'<i class="icon-flag text-primary icon-2x"></i></label>' +
+                            '        <span class="pull-right"><small>'+(msg.msgr_msg_cont_date)+'</small></span><br/>'+
+                            '        <label class="user-name"><span>'+(msg.usr_firstname+" "+msg.usr_lastname)+'</span></label>' +
                             '    </span> '+
                             '	 <div id="messenger-msg-cont"><span id="messenger-msg"><small>'+(msg.msgr_msg_cont_message)+'</small></span></div>' +
                             '</li>';
                         ctr++;
                     });
                 });
-                //open up the message notification area
-                if(!msgrFirstLoad){
-                	$("#melis-messenger-messages").slideToggle();
-                	setTimeout(function(){
-                		//after 3 seconds, we hide the message notification area
-                		$("#melis-messenger-messages").removeAttr('style');
-                	}, 3000);
+                //check if there is new message
+                if(msgrTotalNotificationMsg != data.messages.length && data.messages.length > 0) {
+                    //get total number of message
+                    msgrTotalNotificationMsg = data.messages.length;
+                    //open up the message notification area
+                    if(!msgrFirstLoad && showNoti){
+                        $("#melis-messenger-messages").slideToggle();
+                        setTimeout(function () {
+                            //after 3 seconds, we hide the message notification area
+                            $("#melis-messenger-messages").removeAttr('style');
+                        }, 3000);
+                    }
                 }
             }else{
-	           tempData += ''+
+                msgrTotalNotificationMsg = 0;
+	            tempData += ''+
 	           		'<li class="empty-notif-li">'+   
 		            '	<div class="media">'+       
 		            '   	 <span>'+translations.tr_melismessenger_tool_no_message_notification +'</span>'+    
 		            ' </div>'+
 		        	'</li>';
-	           msgrBody.find("#melis-messenger-messages").addClass("empty-notif");
-	           msgrBody.find("#melis-messenger-messages").prev().find(".badge").addClass("hidden");
+	            msgrBody.find("#melis-messenger-messages").addClass("empty-notif");
+	            msgrBody.find("#melis-messenger-messages").prev().find(".badge").addClass("hidden");
             }
 			msgrBody.find("#melis-messenger-messages").empty().append(tempData);
             msgrBody.find("#id_melismessenger_tool_header_messages.dropdown.notification a span.badge").text(ctr);
@@ -603,24 +631,25 @@ var messengerTool = (function(window){
 	function runMessengerInterval(){
 		//check if messenger tool is selected
     	if($('#id_melismessenger_tool').is(':visible')){
-    		emptyChatContainer();
+            //set msg offset to 0
     		msgrMsgOffset = 0;
     		getConversation(false, msgrConversationId);
-            getInboxListContainer().empty();
             getInboxList();
     	}
     	getNewMessage();
 	}
 	//function to use on first load and reloading the conversation
 	function loadMessages(){
+        //set total number of message to 0
+        msgrTotalMsg = 0;
         //set offset to zero
         msgrMsgOffset = 0;
-		emptyChatContainer();
 		getConversation(false, msgrConversationId);
 		triggerChatScrollEvent(getChatContainer());
 	}
 	//function to use on first load and reloading the inbox list
 	function loadInbox(){
+        msgrTotalInboxList = 0;
         getInboxListContainer().empty();
 		initTokenizePlugin();
 		getInboxList();
@@ -629,32 +658,34 @@ var messengerTool = (function(window){
 
     //function to open the messenger tab
     function openMessengerTab(){
-        //open the user profile tab
-        var userName = $("#user-name-link").html().trim();
-        melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile');
-        //we must set a time to make sure that the tab are already loaded before we manipulate the DOM
-        setTimeout(function(){
-            //get the tabs
-            var _parent = $('#id_meliscore_user_profile_tabs');
-            //remove the active class in li and set active for the messenger tab
-            var li = _parent.find('ul li');
-            $.each(li, function(){
-                var a = $(this).find('a').attr('href');
-                $(this).removeClass('active');
-                if(a == "#id_melismessenger_tool"){
-                    $(this).addClass('active');
-                }
-            });
-            //make the content of the tab active, and deactive the rest
-            var cont = _parent.find('.user-profile-tab-content .tab-content div.tab-pane');
-            $.each(cont, function(){
-                var cont_id = $(this).attr('id');
-                $(this).removeClass('active');
-                if(cont_id == "id_melismessenger_tool"){
-                    $(this).addClass('active');
-                }
-            });
-        }, 1500);
+	    return new Promise(function(){
+            //open the user profile tab
+            var userName = $("#user-name-link").html().trim();
+            melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile');
+            //we must set a time to make sure that the tab are already loaded before we manipulate the DOM
+            setTimeout(function(){
+                //get the tabs
+                var _parent = $('#id_meliscore_user_profile_tabs');
+                //remove the active class in li and set active for the messenger tab
+                var li = _parent.find('.widget .widget-head ul li');
+                $.each(li, function(){
+                    var a = $(this).find('a').attr('href');
+                    $(this).removeClass('active');
+                    if(a == "#id_melismessenger_tool"){
+                        $(this).addClass('active');
+                    }
+                });
+                //make the content of the tab active, and deactivate the rest
+                var cont = _parent.find('.user-profile-tab-content .tab-content div.tab-pane');
+                $.each(cont, function(){
+                    var cont_id = $(this).attr('id');
+                    $(this).removeClass('active');
+                    if(cont_id == "id_melismessenger_tool"){
+                        $(this).addClass('active');
+                    }
+                });
+            }, 1500);
+        });
     }
 
     //get the chat container

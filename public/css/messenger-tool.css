@@ -122,6 +122,12 @@
 	overflow: auto;
 }
 
+#melis-messenger-messages .user-name{
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 #melis-messenger-messages li{
 	padding: 10px;

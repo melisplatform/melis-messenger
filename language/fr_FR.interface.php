@@ -14,6 +14,6 @@
         'tr_melismessenger_tool_inbox'                                  =>  'Boîte de réception',
         'tr_melismessenger_tool_chat'                                   =>  'Chat',
         'tr_melismessenger_tool_no_message_notification'                => 'Vous n\'avez pas de message',
-        'tr_melismessenger_tool_image_note'                             => 'Note: Les images uploadées via la Media Library sont accessible par tous les utilisateurs',
+        'tr_melismessenger_tool_image_note'                             => 'Note: Les images uploadées via la Media Library sont accessibles par tous les utilisateurs',
         'tr_melismessenger_tool_user_is_deleted'                        => 'This user has been deleted.',
     );
