@@ -271,7 +271,7 @@ var messengerTool = (function(window){
                 //display select contact name
                 setConversationHeader(msgrConversationId);
                 //display conversation
-                getConversation(false, msgrConversationId);
+                getConversation(true, msgrConversationId);
 
                 //update the message status and refresh the message notification
                 $.post('/melis/MelisMessenger/MelisMessenger/updateMessageStatus', {"id": msgrConversationId}, function () {
@@ -333,7 +333,6 @@ var messengerTool = (function(window){
 	
 	//get and display the conversation
 	function getConversation(timeOut, msgrConversationId, type, offset){
-		timeOut = (timeOut == undefined ? true : timeOut);
 		type 	= (type == undefined ? "append" : type);
         offset 	= (offset == undefined ? 0 : offset);
 
@@ -684,7 +683,7 @@ var messengerTool = (function(window){
                         $(this).addClass('active');
                     }
                 });
-            }, 1500);
+            }, 2000);
         });
     }
 
