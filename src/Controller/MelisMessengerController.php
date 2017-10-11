@@ -9,30 +9,13 @@
 
 namespace MelisMessenger\Controller;
 
+use MelisCore\Service\MelisCoreRightsService;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\View\Model\JsonModel;
 
 class MelisMessengerController extends AbstractActionController
 {
-    public function indexAction()
-    {
-        $view = new ViewModel();
-        return $view;
-    }
-    
-    /**
-     * 
-     * Display the menu of the messenger
-     * 
-     * @return \Zend\View\Model\ViewModel
-     */
-    public function renderMessengerLeftmenuAction()
-    {
-        $view = new ViewModel();
-        return $view;
-    }
-    
     /**
      * Display the message notification
      * @return \Zend\View\Model\ViewModel
@@ -43,6 +26,7 @@ class MelisMessengerController extends AbstractActionController
         
         $view = new ViewModel();
         $view->melisKey = $melisKey;
+        $view->isAccessible = $this->getUserRightsForMessenger();
         return $view;
     }
 
@@ -57,6 +41,7 @@ class MelisMessengerController extends AbstractActionController
         $melisKey = $this->params()->fromRoute('melisKey', '');
     	$view = new ViewModel();
     	$view->melisKey = $melisKey;
+        $view->isAccessible = $this->getUserRightsForMessenger();
         return $view;
     }
     
@@ -383,6 +368,19 @@ class MelisMessengerController extends AbstractActionController
             "interval" => $msgrConfig,
         );
         return new JsonModel($response);
+    }
+
+    /**
+     * Function to get the user rights of user to melis messenger
+     * @return boolean
+     */
+    private function getUserRightsForMessenger(){
+        $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
+        $melisCoreRights = $this->getServiceLocator()->get('MelisCoreRights');
+        $xmlRights = $melisCoreAuth->getAuthRights();
+        $isAccessible = $melisCoreRights->isAccessible($xmlRights, MelisCoreRightsService::MELISCORE_PREFIX_INTERFACE, "/melismessenger");
+
+        return $isAccessible;
     }
     
     /**

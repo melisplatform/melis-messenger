@@ -9,16 +9,18 @@
         $data_melisKey = $this->melisKey;
 	
 ?>
-<div data-melisKey='<?= $data_melisKey; ?>'<?= $id; ?> role="tabpanel" class="tab-pane">
-	<div class="row row-app">
-        <div class="col-md-4">
-            <?php echo $this->melismessenger_tool_inbox;?>
-            <!-- // END col-separator -->
-        </div>
-        <!-- // END col -->
-        <div class="col-md-8">
-            <?php echo $this->melismessenger_tool_content;?>
+<?php if($this->isAccessible) { ?>
+    <div data-melisKey='<?= $data_melisKey; ?>'<?= $id; ?> role="tabpanel" class="tab-pane">
+        <div class="row row-app">
+            <div class="col-md-4">
+                <?php echo $this->melismessenger_tool_inbox;?>
+                <!-- // END col-separator -->
+            </div>
+            <!-- // END col -->
+            <div class="col-md-8">
+                <?php echo $this->melismessenger_tool_content;?>
+            </div>
         </div>
     </div>
-</div>
+<?php } ?>
 

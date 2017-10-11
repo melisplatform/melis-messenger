@@ -1,6 +1,6 @@
 <?php
     return array(
-        'tr_melismessenger_tool_name'                                   =>  'Messenger',
+        'tr_melismessenger_tool_name'                                   =>  'Melis Messenger',
         'tr_melismessenger_tool_input_placeholder'                      =>  'Ecrivez votre message..',
         'tr_melistoolmesseger_tool_input_empty'                         =>  'Veuillez insérer votre message.',
         'tr_melismessenger_tool_empty_conversation'                     =>  'Pas de conversation à afficher.',

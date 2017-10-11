@@ -8,18 +8,20 @@
     $data_melisKey = $this->melisKey;
 
 ?>
-<!-- START melis messager message container -->
-<li class="dropdown notification" <?= $id; ?> data-melisKey='<?= $data_melisKey; ?>' <?= $namePlugin; ?>>
+<?php if($this->isAccessible) { ?>
+    <!-- START melis messager message container -->
+    <li class="dropdown notification" <?= $id; ?> data-melisKey='<?= $data_melisKey; ?>' <?= $namePlugin; ?>>
 
-    <a href="#" class="dropdown-toggle menu-icon dropdown-hover">
-        <i class="fa fa-fw fa-comment"></i>
-        <span class="badge badge-success hidden">0</span>
-    </a>
-    <ul id="melis-messenger-messages" class="dropdown-menu inbox empty-notif">
-    	<li class="empty-notif-li">   
-        	<div class="media">       
-            	 <span><?= $this->translate('tr_melismessenger_tool_no_message_notification'); ?></span>      
-        	</div>
-    	</li>
-    </ul>
-</li>
+        <a href="#" class="dropdown-toggle menu-icon dropdown-hover">
+            <i class="fa fa-fw fa-comment"></i>
+            <span class="badge badge-success hidden">0</span>
+        </a>
+        <ul id="melis-messenger-messages" class="dropdown-menu inbox empty-notif">
+            <li class="empty-notif-li">
+                <div class="media">
+                     <span><?= $this->translate('tr_melismessenger_tool_no_message_notification'); ?></span>
+                </div>
+            </li>
+        </ul>
+    </li>
+<?php } ?>

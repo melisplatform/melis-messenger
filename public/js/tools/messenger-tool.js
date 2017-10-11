@@ -19,16 +19,43 @@ var messengerTool = (function(window){
     var tempConversationId = 0; //store the conversation id temporarily
 	var msgrInboxDefaultDisplayNo = 10; //default number of inbox to display
     var msgrLoadTheInbox = false; //used to detect when there is new message and need the inbox to load
-	
-	//set the interval for checking of new message
-	setMsgrTimeInterval();
-	//detect if first load
-	$(window).load(function(){
-		setTimeout(function(){
-			//set the msgrFirstLoad to false after 3 seconds
-			msgrFirstLoad = false;
-		}, 3000);
-	});
+	var msgrUserHasRights = false;
+
+	/** detect if messenger notification area is visible
+	 * we use this to determine whether the user has rights on melis messenger
+	 */
+    var ul = $('div#id_meliscore_header ul.navbar-nav');
+    var li = ul.find('li.notification');
+    $.each(li, function(){
+    	var id = $(this).attr('id');
+    	if(id == "id_melismessenger_tool_header_messages"){
+            msgrUserHasRights = true;
+    		//run the interval
+            //set the interval for checking of new message
+            setMsgrTimeInterval();
+            //detect if first load
+            $(window).load(function(){
+                setTimeout(function(){
+                    //set the msgrFirstLoad to false after 3 seconds
+                    msgrFirstLoad = false;
+                }, 3000);
+            });
+            return false;
+		}
+    });
+
+    //we need to position the scroll bar if the user close the messenger and open again from the user profile
+    msgrBody.on('click', '#melis-messenger-tab', function(){
+        //check if messenger already open
+       if($('#id_melismessenger_tool').not(':visible')){
+           setTimeout(function(){
+               if (getChatContainer().find('.media').length != 0) {
+                   getChatContainer().scrollTop(getChatContainer()[0].scrollHeight);
+                   msgrDetectScroll = true;
+               }
+           }, 500);
+       }
+    });
 
 	//send message
 	msgrBody.on('submit','#sendMsgForm', function(e){
@@ -42,8 +69,8 @@ var messengerTool = (function(window){
     });
 
     /**
-     * Display conversation after the user select a contact
-     */
+     *Display conversation after the user select a contact
+    */
     msgrBody.on('click' , '.selectContact', function(e){
     	//check if we select the same contact, so that we will not going to request again
     	if(msgrConversationId != $(this).attr('data-convo-id'))
@@ -69,7 +96,7 @@ var messengerTool = (function(window){
     	}
         e.preventDefault();
     });
-    
+
     /**
      * Create a conversation after the user select a contact
      */
@@ -90,7 +117,7 @@ var messengerTool = (function(window){
 	    			msgrConversationId = $(this).attr('data-convo-id');
 	    			//empty the container
 	    			emptyChatContainer();
-	    			
+
 	    			//if the contact is not yet in the top, we must move it to the top of the inbox list
 	    			$(this).parent().prepend(this);
 	    			$(this).show();
@@ -166,13 +193,13 @@ var messengerTool = (function(window){
             }
 		}
 	});
-    
+
     //get the name and id of the selected contact
     msgrBody.on('tokenize:tokens:add','#selectUsers', function(e, value, text){
     	msgrSelectedContactname = text;
         msgrSelectedContactId = value;
     });
-    
+
     //refresh chat box / conversation
     msgrBody.on('click', '.refresh-chat', function(e){
     	//specify if we allow to detect scroll
@@ -183,14 +210,14 @@ var messengerTool = (function(window){
     	melisHelper.zoneReload("id_melismessenger_tool_content", "melismessenger_tool_content");
     	e.preventDefault();
     });
-    
+
     //refresh inbox / contacts
     msgrBody.on('click', '.refresh-inbox', function(e){
     	//reload inbox
     	melisHelper.zoneReload("id_melismessenger_tool_inbox", "melismessenger_tool_inbox");
     	e.preventDefault();
     });
-    
+
     /**
      * Show previous messages when the user scroll up
      */
@@ -230,7 +257,7 @@ var messengerTool = (function(window){
 			msgrIntervalName = window.setInterval(runMessengerInterval, msgrTimeInterval);
 	  	}, 2000));
     });
-    
+
     /**
      * Show more data in the inbox on scroll down
      */
@@ -247,9 +274,7 @@ var messengerTool = (function(window){
 
     //show the messenger tab when the header messenger icon is click
     msgrBody.on('click', '#id_melismessenger_tool_header_messages a.dropdown-toggle', function(){
-        if($('#id_melismessenger_tool').not(':visible')) {
-            openMessengerTab();
-        }
+        openMessengerTab();
     });
 
     /*
@@ -259,28 +284,9 @@ var messengerTool = (function(window){
     msgrBody.on('click', '#melis-messenger-messages li', function(){
         msgrMsgOffset = 0;
         var _temp_convo_id = $(this).attr('data-convo-id');
-    	$.when(openMessengerTab()).then(function(){
-            if(_temp_convo_id != undefined) {
-                msgrTotalMsg = 0;
-                //set conversation id
-                msgrConversationId = _temp_convo_id;
-                //specify if we allow to detect scroll
-                msgrDetectScroll = false;
-                //empty the container
-                emptyChatContainer();
-                //display select contact name
-                setConversationHeader(msgrConversationId);
-                //display conversation
-                getConversation(true, msgrConversationId);
-
-                //update the message status and refresh the message notification
-                $.post('/melis/MelisMessenger/MelisMessenger/updateMessageStatus', {"id": msgrConversationId}, function () {
-                    getNewMessage();
-                });
-            }
-        });
+        openMessengerTab(_temp_convo_id);
     });
-    
+
 	/**
 	* Function to display the inbox
 	*/
@@ -330,7 +336,7 @@ var messengerTool = (function(window){
 	        }
     	});
 	}
-	
+
 	//get and display the conversation
 	function getConversation(timeOut, msgrConversationId, type, offset){
 		type 	= (type == undefined ? "append" : type);
@@ -381,7 +387,7 @@ var messengerTool = (function(window){
             setConversationHeader(0, "");
         }
 	}
-	
+
 	/**
 	 *  Get and display the conversation of the user and its selected contact
 	*/
@@ -393,9 +399,9 @@ var messengerTool = (function(window){
         	var image = data[i].usr_image;
         	//check if message came from the user
             if(data[i].msgr_msg_cont_sender_id == id || id == null){//display the current user message
-            	html = 
+            	html =
 	                    '<div class="media innerAll right">'+
-	                    '	<img src="'+image+'" alt="" class="thumb img-responsive img-circle pull-right" width="40">'+ 
+	                    '	<img src="'+image+'" alt="" class="thumb img-responsive img-circle pull-right" width="40">'+
 	                    '	<div class="media-msgrBody">'+
 	                    '		<small class="date"><cite>'+data[i].msgr_msg_cont_date+'</cite></small>'+
 	                    '		<div class="pull-right chat-contact-msg my-msg">'+data[i].msgr_msg_cont_message+'</div>'+
@@ -419,7 +425,7 @@ var messengerTool = (function(window){
             (type == "append") ? getChatContainer().append(html) : getChatContainer().prepend(html);
         }
 	}
-	 
+
 	/**
      * Function to send message
      * @param datas query string
@@ -463,7 +469,7 @@ var messengerTool = (function(window){
         //clear the field and enable the button create
         $('#selectUsers').tokenize2().trigger('tokenize:clear');
 	}
-	
+
 	/**
 	 * Execute the saving of message
 	 */
@@ -486,7 +492,7 @@ var messengerTool = (function(window){
         	1000);
         });
 	}
-	
+
 	/**
 	 * Function to get new message to notify the user
 	 */
@@ -529,9 +535,9 @@ var messengerTool = (function(window){
             }else{
                 msgrTotalNotificationMsg = 0;
 	            tempData += ''+
-	           		'<li class="empty-notif-li">'+   
-		            '	<div class="media">'+       
-		            '   	 <span>'+translations.tr_melismessenger_tool_no_message_notification +'</span>'+    
+	           		'<li class="empty-notif-li">'+
+		            '	<div class="media">'+
+		            '   	 <span>'+translations.tr_melismessenger_tool_no_message_notification +'</span>'+
 		            ' </div>'+
 		        	'</li>';
 	            msgrBody.find("#melis-messenger-messages").addClass("empty-notif");
@@ -541,7 +547,7 @@ var messengerTool = (function(window){
             msgrBody.find("#id_melismessenger_tool_header_messages.dropdown.notification a span.badge").text(ctr);
 		});
 	}
-	
+
 	/**
      * Function to display the name of selected contact on the conversation content
      */
@@ -584,13 +590,16 @@ var messengerTool = (function(window){
 
 	//function to initialize tokenize plugin
 	function initTokenizePlugin(){
-		$('#selectUsers').tokenize2({
-			searchHighlight: true,
-			placeholder: translations.tr_melismessenger_tool_select_contact,
-			displayNoResultsMessage: true,
-			tokensMaxItems: 1,
-			dropdownMaxItems: 5,
-		});
+        //check if user has rights
+        if(msgrUserHasRights) {
+            $('#selectUsers').tokenize2({
+                searchHighlight: true,
+                placeholder: translations.tr_melismessenger_tool_select_contact,
+                displayNoResultsMessage: true,
+                tokensMaxItems: 1,
+                dropdownMaxItems: 5,
+            });
+        }
 	}
 
 	//trigger the scroll event
@@ -639,52 +648,78 @@ var messengerTool = (function(window){
 	}
 	//function to use on first load and reloading the conversation
 	function loadMessages(){
-        //set total number of message to 0
-        msgrTotalMsg = 0;
-        //set offset to zero
-        msgrMsgOffset = 0;
-		getConversation(false, msgrConversationId);
-		triggerChatScrollEvent(getChatContainer());
+        //check if user has rights
+		if(msgrUserHasRights) {
+            //set total number of message to 0
+            msgrTotalMsg = 0;
+            //set offset to zero
+            msgrMsgOffset = 0;
+            getConversation(false, msgrConversationId);
+            triggerChatScrollEvent(getChatContainer());
+        }
 	}
 	//function to use on first load and reloading the inbox list
 	function loadInbox(){
-        msgrTotalInboxList = 0;
-        getInboxListContainer().empty();
-		initTokenizePlugin();
-		getInboxList();
-        triggerInboxScrollEvent(getInboxListContainer());
+		//check if user has rights
+		if(msgrUserHasRights) {
+            msgrTotalInboxList = 0;
+            getInboxListContainer().empty();
+            initTokenizePlugin();
+            getInboxList();
+            triggerInboxScrollEvent(getInboxListContainer());
+        }
 	}
 
     //function to open the messenger tab
-    function openMessengerTab(){
-	    return new Promise(function(){
-            //open the user profile tab
-            var userName = $("#user-name-link").html().trim();
-            melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile');
+    function openMessengerTab(convoId){
+	    convoId = (convoId == undefined) ? 0 : convoId ;
+        //open the user profile tab
+        var userName = $("#user-name-link").html().trim();
+        melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile');
+        //check if messenger is open
+        if($('#id_melismessenger_tool').not(':visible')) {
             //we must set a time to make sure that the tab are already loaded before we manipulate the DOM
-            setTimeout(function(){
+            setTimeout(function () {
                 //get the tabs
                 var _parent = $('#id_meliscore_user_profile_tabs');
                 //remove the active class in li and set active for the messenger tab
                 var li = _parent.find('.widget .widget-head ul li');
-                $.each(li, function(){
+                $.each(li, function () {
                     var a = $(this).find('a').attr('href');
                     $(this).removeClass('active');
-                    if(a == "#id_melismessenger_tool"){
+                    if (a == "#id_melismessenger_tool") {
                         $(this).addClass('active');
                     }
                 });
                 //make the content of the tab active, and deactivate the rest
                 var cont = _parent.find('.user-profile-tab-content .tab-content div.tab-pane');
-                $.each(cont, function(){
+                $.each(cont, function () {
                     var cont_id = $(this).attr('id');
                     $(this).removeClass('active');
-                    if(cont_id == "id_melismessenger_tool"){
+                    if (cont_id == "id_melismessenger_tool") {
                         $(this).addClass('active');
                     }
                 });
             }, 2000);
-        });
+        }
+        if(convoId != 0) {
+            msgrTotalMsg = 0;
+            //set conversation id
+            msgrConversationId = convoId;
+            //specify if we allow to detect scroll
+            msgrDetectScroll = false;
+            //empty the container
+            emptyChatContainer();
+            //display select contact name
+            setConversationHeader(msgrConversationId);
+            //display conversation
+            getConversation(true, msgrConversationId);
+
+            //update the message status and refresh the message notification
+            $.post('/melis/MelisMessenger/MelisMessenger/updateMessageStatus', {"id": msgrConversationId}, function () {
+                getNewMessage();
+            });
+        }
     }
 
     //get the chat container
