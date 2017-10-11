@@ -26,7 +26,7 @@ class MelisMessengerController extends AbstractActionController
         
         $view = new ViewModel();
         $view->melisKey = $melisKey;
-        $view->isAccessible = $this->getUserRightsForMessenger();
+        $view->isAccessible = $this->getUserRightsForMessengerAction()->isAccessible;
         return $view;
     }
 
@@ -41,7 +41,7 @@ class MelisMessengerController extends AbstractActionController
         $melisKey = $this->params()->fromRoute('melisKey', '');
     	$view = new ViewModel();
     	$view->melisKey = $melisKey;
-        $view->isAccessible = $this->getUserRightsForMessenger();
+        $view->isAccessible = $this->getUserRightsForMessengerAction()->isAccessible;
         return $view;
     }
     
@@ -372,15 +372,18 @@ class MelisMessengerController extends AbstractActionController
 
     /**
      * Function to get the user rights of user to melis messenger
-     * @return boolean
+     * @return json
      */
-    private function getUserRightsForMessenger(){
+    public function getUserRightsForMessengerAction(){
         $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
         $melisCoreRights = $this->getServiceLocator()->get('MelisCoreRights');
         $xmlRights = $melisCoreAuth->getAuthRights();
         $isAccessible = $melisCoreRights->isAccessible($xmlRights, MelisCoreRightsService::MELISCORE_PREFIX_INTERFACE, "/melismessenger");
 
-        return $isAccessible;
+        $response = array(
+            'isAccessible' => $isAccessible
+        );
+        return new JsonModel($response);
     }
     
     /**

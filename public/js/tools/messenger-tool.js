@@ -21,28 +21,10 @@ var messengerTool = (function(window){
     var msgrLoadTheInbox = false; //used to detect when there is new message and need the inbox to load
 	var msgrUserHasRights = false;
 
-	/** detect if messenger notification area is visible
-	 * we use this to determine whether the user has rights on melis messenger
-	 */
-    var ul = $('div#id_meliscore_header ul.navbar-nav');
-    var li = ul.find('li.notification');
-    $.each(li, function(){
-    	var id = $(this).attr('id');
-    	if(id == "id_melismessenger_tool_header_messages"){
-            msgrUserHasRights = true;
-    		//run the interval
-            //set the interval for checking of new message
-            setMsgrTimeInterval();
-            //detect if first load
-            $(window).load(function(){
-                setTimeout(function(){
-                    //set the msgrFirstLoad to false after 3 seconds
-                    msgrFirstLoad = false;
-                }, 3000);
-            });
-            return false;
-		}
-    });
+    /**
+     * Get the user rights for messenger
+     */
+    getUserRights();
 
     //we need to position the scroll bar if the user close the messenger and open again from the user profile
     msgrBody.on('click', '#melis-messenger-tab', function(){
@@ -730,6 +712,25 @@ var messengerTool = (function(window){
     //get the inbox list container
     function getInboxListContainer(){
         return $('#inbox-list');
+    }
+
+    //get user rights
+    function getUserRights(){
+        $.get('/melis/MelisMessenger/MelisMessenger/getUserRightsForMessenger', function(data){
+            if(data.isAccessible == true){
+                msgrUserHasRights = true;
+                //run the interval
+                //set the interval for checking of new message
+                setMsgrTimeInterval();
+                //detect if first load
+                $(window).load(function(){
+                    setTimeout(function(){
+                        //set the msgrFirstLoad to false after 3 seconds
+                        msgrFirstLoad = false;
+                    }, 3000);
+                });
+            }
+        });
     }
 
 	return{
