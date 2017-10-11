@@ -37,6 +37,7 @@ class Module
 			include __DIR__ . '/../config/module.config.php',
 			include __DIR__ . '/../config/app.interface.php',
 			include __DIR__ . '/../config/app.forms.php',
+			include __DIR__ . '/../config/diagnostic.config.php',
     	);
     	
     	foreach ($configFiles as $file) {
