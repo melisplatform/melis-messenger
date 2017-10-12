@@ -657,11 +657,9 @@ var messengerTool = (function(window){
 	    convoId = (convoId == undefined) ? 0 : convoId ;
         //open the user profile tab
         var userName = $("#user-name-link").html().trim();
-        melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile');
-        //check if messenger is open
-        if($('#id_melismessenger_tool').not(':visible')) {
-            //we must set a time to make sure that the tab are already loaded before we manipulate the DOM
-            setTimeout(function () {
+        melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile', null, null, function(){
+            //check if messenger is open
+            if($('#id_melismessenger_tool').not(':visible')) {
                 //get the tabs
                 var _parent = $('#id_meliscore_user_profile_tabs');
                 //remove the active class in li and set active for the messenger tab
@@ -682,8 +680,9 @@ var messengerTool = (function(window){
                         $(this).addClass('active');
                     }
                 });
-            }, 2000);
-        }
+            }
+        });
+
         if(convoId != 0) {
             msgrTotalMsg = 0;
             //set conversation id

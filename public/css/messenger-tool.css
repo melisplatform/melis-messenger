@@ -13,6 +13,7 @@
 #id_melismessenger_tool_content #sendMsgForm #btn-send-message{
 	height: 176px;
 	width: 100%;
+    padding: 1px !important;
 }
 
 #convo-content #chat-container{
