@@ -74,7 +74,6 @@ return array(
                                 ),
                             ),
                             'filters'  => array(
-                                array('name' => 'StripTags'),
                                 array('name' => 'StringTrim'),
                             ),
                         ),

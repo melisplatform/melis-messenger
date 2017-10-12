@@ -24,42 +24,42 @@
         <div id="chat-form">
 			<?php
 				$form = $this->melismessenger_form;
-				$form->get('msgr_msg_cont_message')->setAttribute('id',$this->idPage.'_msgr_msg_cont_message');
+				$form->get('msgr_msg_cont_message')->setAttribute('id','msgr_msg_cont_message');
 				$form->prepare();
 				echo $this->form()->openTag($form); 
 				echo $this->melisFieldCollection($form);
 				echo $this->form()->closeTag(); 
 			?>
         </div>
-         <span><small><?=$this->translate('tr_melismessenger_tool_image_note')?></small></span>
     </div> <!-- // Chat END -->
+    <span><small><?=$this->translate('tr_melismessenger_tool_image_note')?></small></span>
     <script type="text/javascript">
         $(document).ready(function() {
             //we prepare the tinyMce init here to make sure that the form are already loaded
-            melisTinyMCE.createTinyMCE("tool", "textarea#<?php echo $this->idPage.'_msgr_msg_cont_message'?>",
-                {
-                    width : "99.6%",
-                    toolbar : 'undo redo | styleselect | bold italic | link image',
-                    style_formats: [
-                        {title: 'Headers', items: [
-                            {title: 'Header 1', format: 'h1'},
-                            {title: 'Header 2', format: 'h2'},
-                            {title: 'Header 3', format: 'h3'},
-                            {title: 'Header 4', format: 'h4'},
-                            {title: 'Header 5', format: 'h5'},
-                            {title: 'Header 6', format: 'h6'}
-                        ]},
-                        {title: 'Inline', items: [
-                            {title: 'Bold', icon: 'bold', format: 'bold'},
-                            {title: 'Italic', icon: 'italic', format: 'italic'},
-                            {title: 'Underline', icon: 'underline', format: 'underline'},
-                            {title: 'Strikethrough', icon: 'strikethrough', format: 'strikethrough'},
-                            {title: 'Superscript', icon: 'superscript', format: 'superscript'},
-                            {title: 'Subscript', icon: 'subscript', format: 'subscript'},
-                            {title: 'Code', icon: 'code', format: 'code'}
-                        ]},
-                    ]
-                });
+            melisTinyMCE.createTinyMCE("tool", "textarea#msgr_msg_cont_message",
+            {
+                width : "99.6%",
+                toolbar : 'undo redo | styleselect | bold italic | link image',
+                style_formats: [
+                    {title: 'Headers', items: [
+                        {title: 'Header 1', format: 'h1'},
+                        {title: 'Header 2', format: 'h2'},
+                        {title: 'Header 3', format: 'h3'},
+                        {title: 'Header 4', format: 'h4'},
+                        {title: 'Header 5', format: 'h5'},
+                        {title: 'Header 6', format: 'h6'}
+                    ]},
+                    {title: 'Inline', items: [
+                        {title: 'Bold', icon: 'bold', format: 'bold'},
+                        {title: 'Italic', icon: 'italic', format: 'italic'},
+                        {title: 'Underline', icon: 'underline', format: 'underline'},
+                        {title: 'Strikethrough', icon: 'strikethrough', format: 'strikethrough'},
+                        {title: 'Superscript', icon: 'superscript', format: 'superscript'},
+                        {title: 'Subscript', icon: 'subscript', format: 'subscript'},
+                        {title: 'Code', icon: 'code', format: 'code'}
+                    ]},
+                ]
+            });
         });
     </script>
 </div>

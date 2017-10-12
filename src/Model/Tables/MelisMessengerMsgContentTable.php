@@ -39,7 +39,7 @@ class MelisMessengerMsgContentTable extends MelisGenericTable
         $select->join(array('mbr'=>'melis_messenger_msg_members'), 'mbr.msgr_msg_id = msg.msgr_msg_id', array());
         $select->where->equalTo("mbr.msgr_msg_mbr_usr_id", $id);
         $select->where->notEqualTo("msgr_msg_cont_sender_id", $id);
-        $select->where->equalTo("msgr_msg_cont_status", "new");
+        $select->where->equalTo("msgr_msg_cont_status", 1);
         $select->order("msgr_msg_cont_date DESC");
         
         $data = $this->tableGateway->selectWith($select);

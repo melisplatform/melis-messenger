@@ -1,9 +1,18 @@
-#id_melismessenger_tool{
-	overflow:hidden;
+#id_melismessenger_tool #id_melismessenger_tool_content #chat-form{
+    margin-right: 8px;
+}
+
+#id_melismessenger_tool #id_melismessenger_tool_content .widget-chat{
+	padding-bottom: 0px !important;
+}
+
+#id_melismessenger_tool #id_melismessenger_tool_content .widget{
+	margin-bottom: 0px !important;
 }
 
 #id_melismessenger_tool_content #sendMsgForm #btn-send-message{
 	height: 176px;
+	width: 100%;
 }
 
 #convo-content #chat-container{
@@ -65,11 +74,6 @@
 	text-align:center;
 	width:100%;
 	border-bottom:1px solid #ebebeb;
-}
-
-
-#id_melismessenger_tool_content .widget-chat{
-	max-height:738px;
 }
 
 
@@ -187,6 +191,31 @@
 	content: "\f075";
 }
 
+.msg-chat-no-padding{
+	margin-left: 0 !important;
+}
+
+.msg-chat-no-padding [class*="col-"],  /* Elements whose class attribute begins with "col-" */
+.msg-chat-no-padding [class^="col-"] { /* Elements whose class attribute contains the substring "col-" */
+	padding-left: 0;
+	padding-right: 0;
+}
+
+#sendMsgForm #btn-send-message{
+
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1106px) {
+	#sendMsgForm #btn-send-message{
+		height: 209px !important;
+	}
+}
+
+@media only screen and (max-width: 767px) {
+	#sendMsgForm #btn-send-message{
+		height: 50px !important;
+	}
+}
 
 @media only screen and (min-width: 992px) and (max-width: 1375px) {
 	#compose-convo{

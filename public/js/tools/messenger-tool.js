@@ -42,7 +42,7 @@ var messengerTool = (function(window){
 	//send message
 	msgrBody.on('submit','#sendMsgForm', function(e){
         $('#msgr_msg_id').val(msgrConversationId);
-        var msg = $('#_msgr_msg_cont_message').val();
+        var msg = $('#msgr_msg_cont_message').val();
         var qString = $('#sendMsgForm').serialize();
         if(msg != "" && msg != undefined) {
             saveMessage(qString);
@@ -457,7 +457,7 @@ var messengerTool = (function(window){
 	 */
 	function executeSave(datas){
 		$.post('/melis/MelisMessenger/MelisMessenger/saveMessage', datas, function(data){
-            if(data.status == 1){
+            if(data.success){
             	$('#sendMsgForm')[0].reset();
             	//check if conversation is empty
             	if($('#chat-container > div.media').length <= 0){

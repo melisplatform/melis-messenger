@@ -152,9 +152,9 @@ class MelisMessengerController extends AbstractActionController
      */
     public function saveMessageAction()
     {
-        $msg = "failed";
-        $status = 0;
+        $success = false;
         $data = array();
+        $errors = array();
         
         $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
         $melisMelisCoreConfig = $this->serviceLocator->get('MelisCoreConfig');
@@ -166,15 +166,14 @@ class MelisMessengerController extends AbstractActionController
         $formElements = $this->getServiceLocator()->get('FormElementManager');
         $factory->setFormElementManager($formElements);
         $propertyForm = $factory->createForm($appConfigForm);
-        $melisTool = $this->getServiceLocator()->get('MelisCoreTool');
         //get the request
         $request = $this->getRequest();
         //check if request is post
         if($request->isPost())
         {
-            //get the data
-            $postValues = get_object_vars($request->getPost());
-            $postValues['msgr_msg_cont_message'] = htmlspecialchars($postValues['msgr_msg_cont_message']);
+            //get and sanitize the data
+            $postValues = $this->getTool()->sanitizeRecursive(get_object_vars($request->getPost()), array(), false, true);
+
             //assign the data to the form
             $propertyForm->setData($postValues);
             //check if form is valid(if all the form field are match with the value that we pass from routes)
@@ -183,27 +182,28 @@ class MelisMessengerController extends AbstractActionController
                 //override the postValue data to prepare the insertion of data
                 $postValues['msgr_msg_cont_sender_id']  = $this->getCurrentUserId();
                 $postValues['msgr_msg_cont_date']       =   date('Y-m-d H:i:s');
-                $postValues['msgr_msg_cont_status']     =   "new";
+                $postValues['msgr_msg_cont_status']     =   1;
                 
                 //save the message
                 $res = $messengerService->saveMsgContent($postValues);
                 //check if saving is success
                 if($res)
                 {
-                    $postValues['msgr_msg_cont_message']    = htmlspecialchars_decode($postValues['msgr_msg_cont_message']);
                     $postValues['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($postValues['msgr_msg_cont_date']));
-                    $msg = "success";
-                    $status = 1;
+                    $success = true;
                     $data = $postValues;//we need to return the data that we pass so that we can display it directly to the conversation
                     $data['usr_image'] = $this->getUserImage($userAuthDatas->usr_image);
                 }
             }
+            else {
+                $errors = $propertyForm->getMessages();
+            }
         }
         //prepare the data to return
         $response = array(
-            'msg' =>  $msg,
-            'status'  =>  $status,
+            'success'  =>  $success,
             'data'  =>  array($data),
+            'errors' => $errors
         );
         return new JsonModel($response);
     }
@@ -232,7 +232,7 @@ class MelisMessengerController extends AbstractActionController
             $convo[$key]['usr_image'] = $this->getUserImage($convo[$key]['usr_image']);
             
             $convo[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($convo[$key]['msgr_msg_cont_date']));
-            $convo[$key]['msgr_msg_cont_message'] = htmlspecialchars_decode($convo[$key]['msgr_msg_cont_message']);
+            $convo[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($convo[$key]['msgr_msg_cont_message']);
         }
         
         //prepare the data to return
@@ -254,7 +254,7 @@ class MelisMessengerController extends AbstractActionController
         $message = $msgContent->getNewMessage($this->getCurrentUserId())->toArray();
         foreach($message AS $key => $val)
         {
-            $message[$key]['msgr_msg_cont_message'] = htmlspecialchars_decode($message[$key]['msgr_msg_cont_message']);
+            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
             $message[$key]['usr_image'] =  $this->getUserImage($message[$key]['usr_image']);
             $message[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($message[$key]['msgr_msg_cont_date']));
         }
@@ -282,7 +282,7 @@ class MelisMessengerController extends AbstractActionController
         {
             if($post_var['id'] != "")
             {
-                $arr = array("msgr_msg_cont_status" => "read");
+                $arr = array("msgr_msg_cont_status" => 0);
                 $res = $msgContent->updateMessageStatus($arr, $post_var['id'], $user_id);
             }
         }
@@ -338,7 +338,7 @@ class MelisMessengerController extends AbstractActionController
                     $isOnline = $inboxList[$key]['usr_is_online'];
                     $image = $this->getUserImage($inboxList[$key]['usr_image']);
                     $contact_id = $inboxList[$key]['usr_id'];
-                    $message = htmlspecialchars_decode($inboxList[$key]['msgr_msg_cont_message']);
+                    $message = $this->getTool()->sanitize($inboxList[$key]['msgr_msg_cont_message']);
                     //push the contact information to the array
                     array_push($usrInfo, array("name"=>$name, "isOnline"=>$isOnline, "image"=>$image, "message"=>$message));
                     //get the ready the data to be return
@@ -372,7 +372,7 @@ class MelisMessengerController extends AbstractActionController
 
     /**
      * Function to get the user rights of user to melis messenger
-     * @return json
+     * @return \Zend\View\Model\JsonModel
      */
     public function getUserRightsForMessengerAction(){
         $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
@@ -450,5 +450,12 @@ class MelisMessengerController extends AbstractActionController
             $userId = (int) $userAuthDatas->usr_id;
         }
         return $userId;
+    }
+
+    private function getTool()
+    {
+        $service = $this->getServiceLocator()->get('MelisCoreTool');
+
+        return $service;
     }
 }
