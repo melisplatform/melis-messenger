@@ -655,33 +655,22 @@ var messengerTool = (function(window){
     //function to open the messenger tab
     function openMessengerTab(convoId){
 	    convoId = (convoId == undefined) ? 0 : convoId ;
-        //open the user profile tab
-        var userName = $("#user-name-link").html().trim();
-        melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile', null, null, function(){
-            //check if messenger is open
-            if($('#id_melismessenger_tool').not(':visible')) {
-                //get the tabs
-                var _parent = $('#id_meliscore_user_profile_tabs');
-                //remove the active class in li and set active for the messenger tab
-                var li = _parent.find('.widget .widget-head ul li');
-                $.each(li, function () {
-                    var a = $(this).find('a').attr('href');
-                    $(this).removeClass('active');
-                    if (a == "#id_melismessenger_tool") {
-                        $(this).addClass('active');
-                    }
-                });
-                //make the content of the tab active, and deactivate the rest
-                var cont = _parent.find('.user-profile-tab-content .tab-content div.tab-pane');
-                $.each(cont, function () {
-                    var cont_id = $(this).attr('id');
-                    $(this).removeClass('active');
-                    if (cont_id == "id_melismessenger_tool") {
-                        $(this).addClass('active');
-                    }
-                });
+        if($('#id_meliscore_user_profile').is(':visible')){
+            getMessengerTabContent();
+        }else{
+            //open the user profile tab
+            var isMessengerTabOpen = false;
+            var userName = $("#user-name-link").html().trim();
+            melisHelper.tabOpen(userName, 'fa-user', 'id_meliscore_user_profile', 'meliscore_user_profile', null, null, function(){
+                getMessengerTabContent();
+                isMessengerTabOpen = true;
+            });
+
+            if(!isMessengerTabOpen) {
+                getMessengerTabContent();
+                isMessengerTabOpen = false;
             }
-        });
+        }
 
         if(convoId != 0) {
             msgrTotalMsg = 0;
@@ -701,6 +690,30 @@ var messengerTool = (function(window){
                 getNewMessage();
             });
         }
+    }
+
+    //get messenger tab content
+    function getMessengerTabContent(){
+        //get the tabs
+        var _parent = $('#id_meliscore_user_profile_tabs');
+        //remove the active class in li and set active for the messenger tab
+        var li = _parent.find('.widget .widget-head ul li');
+        $.each(li, function () {
+            var a = $(this).find('a').attr('href');
+            $(this).removeClass('active');
+            if (a == "#id_melismessenger_tool") {
+                $(this).addClass('active');
+            }
+        });
+        //make the content of the tab active, and deactivate the rest
+        var cont = _parent.find('.user-profile-tab-content .tab-content div.tab-pane');
+        $.each(cont, function () {
+            var cont_id = $(this).attr('id');
+            $(this).removeClass('active');
+            if (cont_id == "id_melismessenger_tool") {
+                $(this).addClass('active');
+            }
+        });
     }
 
     //get the chat container
