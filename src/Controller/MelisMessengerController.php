@@ -22,11 +22,12 @@ class MelisMessengerController extends AbstractActionController
      */
     public function headerMessengerAction()
     {
+        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
         $melisKey = $this->params()->fromRoute('melisKey', '');
         
         $view = new ViewModel();
         $view->melisKey = $melisKey;
-        $view->isAccessible = $this->getUserRightsForMessengerAction()->isAccessible;
+        $view->isAccessible = $messengerService->getUserRightsForMessenger();
         return $view;
     }
 
@@ -37,11 +38,12 @@ class MelisMessengerController extends AbstractActionController
      * @return \Zend\View\Model\ViewModel
      */
     public function renderMessengerAction()
-    { 
+    {
+        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
         $melisKey = $this->params()->fromRoute('melisKey', '');
     	$view = new ViewModel();
     	$view->melisKey = $melisKey;
-        $view->isAccessible = $this->getUserRightsForMessengerAction()->isAccessible;
+        $view->isAccessible = $messengerService->getUserRightsForMessenger();
         return $view;
     }
     
@@ -375,11 +377,8 @@ class MelisMessengerController extends AbstractActionController
      * @return \Zend\View\Model\JsonModel
      */
     public function getUserRightsForMessengerAction(){
-        $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
-        $melisCoreRights = $this->getServiceLocator()->get('MelisCoreRights');
-        $xmlRights = $melisCoreAuth->getAuthRights();
-        $isAccessible = $melisCoreRights->isAccessible($xmlRights, MelisCoreRightsService::MELISCORE_PREFIX_INTERFACE, "/melismessenger");
-
+        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
+        $isAccessible = $messengerService->getUserRightsForMessenger();
         $response = array(
             'isAccessible' => $isAccessible
         );
