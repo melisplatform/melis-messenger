@@ -90,12 +90,12 @@
 }
 
 
-#inbox-container{
+#contacts-container{
 	overflow: hidden !important;
 }
 
 
-#inbox-container #inbox-header{
+#contacts-container #contact-header{
 	width:100%;
 	background:#424242;
 	padding:10px;
@@ -103,24 +103,24 @@
 }
 
 
-#inbox-container #inbox-list{
+#contacts-container #contact-list{
 	max-height: 645px;
 	overflow: auto;
 }
 
 
-#inbox-container #inbox-list .selectContact{
+#contacts-container #contact-list .selectContact{
 	cursor: pointer;
 	display: none;
 }
 
 
-#inbox-container #inbox-list .thumb.pull-left{
+#contacts-container #contact-list .thumb.pull-left{
 	margin-top:-6px;
 }
 
 
-#inbox-container .inbox-select-contacts {
+#contacts-container .select-contacts {
 	margin-top: 10px;
 }
 
@@ -164,18 +164,18 @@
 }
 
 
-#inbox-list #show-empty-inbox{
+#contact-list #show-empty-contact{
 	text-align: center;
 }
 
 
-#inbox-list #messenger-msg-cont #messenger-msg{
+#contact-list #messenger-msg-cont #messenger-msg{
 	margin-top: 0px !important;
 }
 
 
-#inbox-list #messenger-msg-cont #messenger-msg blockquote,
-#inbox-list #messenger-msg-cont #messenger-msg pre{
+#contact-list #messenger-msg-cont #messenger-msg blockquote,
+#contact-list #messenger-msg-cont #messenger-msg pre{
 	margin-top: -9px !important;
 }
 

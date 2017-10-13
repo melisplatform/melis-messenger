@@ -1,0 +1,50 @@
+<?php
+	$id = '';
+	if (!empty($this->zoneconfig['conf']['id']))
+		$id = ' id="'. $this->zoneconfig['conf']['id'] . '"';
+	$data_melisKey = 'data-melisKey="'.$this->melisKey.'"';
+?>
+<div <?php echo $id.' '.$data_melisKey; ?>>
+    <div class="col-separator col-unscrollable box inbox-scrollable" id="contacts-container">
+        <div class="col-table">
+        	<div id="contact-header">
+        		<div class="btn-group pull-right btn-group-xs">
+        			<a class="btn btn-default refresh-contacts" data-toggle="tab"><i class="fa fa-refresh"></i></a>
+        		</div>
+        		<span class="heading"><i class="fa fa-inbox"></i> <?=$this->translate('tr_melismessenger_tool_contact')?></span>
+        	</div>
+        	<div class="clearfix"></div>
+        	<div class="select-contacts">
+        	    <div class="row row-app">
+                    <div class="col-md-8">
+                    	<select id="selectUsers" multiple class="form-control">
+                        	<?php foreach ($this->users AS $u): ?>
+                        		<option value="<?= $u['usr_id'] ?>"><?= $u['usr_firstname']." ".$u['usr_lastname']; ?></option>
+                        	<?php endforeach;  ?>
+                		</select>
+                        <!-- // END col-separator -->
+                    </div>
+                    <!-- // END col -->
+                    <div class="col-md-4">
+                        <button class="btn btn-success btn-stroke" id="compose-convo" type="button"><i class="fa fa-plus"></i> <?=$this->translate('tr_melismessenger_tool_add_button'); ?></button>
+                    </div>
+                </div>
+            </div>
+            <div class="clearfix"></div>
+            <div class="col-table-row">
+                <div class="col-app col-unscrollable">
+                    <div class="col-app">
+                        <div class="list-group" id="contact-list">
+                            <!-- DISPLAY CONTACT LIST HERE FROM JS -->
+                        </div>
+                        <!-- // END list-group -->
+                    </div>
+                    <!-- // END col-app -->
+                </div>
+                <!-- // END col-app -->
+            </div>
+            <!-- // END col-table-row -->
+        </div>
+        <!-- // END col-table -->
+    </div>
+</div>

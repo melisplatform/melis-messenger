@@ -49,11 +49,11 @@ class MelisMessengerController extends AbstractActionController
     
     /**
      *
-     * Function to render inbox
+     * Function to render contact
      *
      * @return \Zend\View\Model\ViewModel
      */
-    public function renderMessengerInboxAction()
+    public function renderMessengerContactAction()
     {
         //get melisKey
         $melisKey = $this->params()->fromRoute('melisKey', '');
@@ -295,14 +295,14 @@ class MelisMessengerController extends AbstractActionController
     }
     
     /**
-     * Get all contacts to put in the inbox list
+     * Get all contacts
      * @return \Zend\View\Model\JsonModel
      */
-    public function getInboxListAction()
+    public function getContactListAction()
     {
         $arr = array();
         $usrInfo = array();
-        $totalInbox = 0;
+        $totalContact = 0;
         //get current user id
         $userId  = $this->getCurrentUserId();
         $list = $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
@@ -311,18 +311,18 @@ class MelisMessengerController extends AbstractActionController
         //check if conversation id is not empty
         if(!empty($convoIds))
         {
-            //count number of contacts in the inbox
-            $totalInbox = count($list->getInbox($convoIds, $userId)->toArray());
-            //get the list of inbox
-            $inboxList = $list->getInbox($convoIds, $userId)->toArray();
-            //loop through each inbox list to process the results before returning to view
-            foreach($inboxList AS $key => $val)
+            //count number of contacts
+            $totalContact = count($list->getContact($convoIds, $userId)->toArray());
+            //get the list of contact
+            $contactList = $list->getContact($convoIds, $userId)->toArray();
+            //loop through each contact list to process the results before returning to view
+            foreach($contactList AS $key => $val)
             {
                 /*
                  * check if the usr_id = to the current user id
                  * if there are equal, dont eclude the current user to the list of contacts
                  */
-                if($userId != $inboxList[$key]['usr_id'])
+                if($userId != $contactList[$key]['usr_id'])
                 {
                     /*
                      * Group the contact for every conversation
@@ -330,30 +330,30 @@ class MelisMessengerController extends AbstractActionController
                      * It will help to display the contact in group in the future,
                      * but it will also display the individual contact
                      */
-                    if(!array_key_exists($inboxList[$key]['msgr_msg_id'], $arr))
+                    if(!array_key_exists($contactList[$key]['msgr_msg_id'], $arr))
                     {
-                        $arr[$inboxList[$key]['msgr_msg_id']] = array();
+                        $arr[$contactList[$key]['msgr_msg_id']] = array();
                         $usrInfo = array();
                     }
                     //prepare the information of the contact
-                    $name = $inboxList[$key]['usr_firstname']." ".$inboxList[$key]['usr_lastname'];
-                    $isOnline = $inboxList[$key]['usr_is_online'];
-                    $image = $this->getUserImage($inboxList[$key]['usr_image']);
-                    $contact_id = $inboxList[$key]['usr_id'];
-                    $message = $this->getTool()->sanitize($inboxList[$key]['msgr_msg_cont_message']);
+                    $name = $contactList[$key]['usr_firstname']." ".$contactList[$key]['usr_lastname'];
+                    $isOnline = $contactList[$key]['usr_is_online'];
+                    $image = $this->getUserImage($contactList[$key]['usr_image']);
+                    $contact_id = $contactList[$key]['usr_id'];
+                    $message = $this->getTool()->sanitize($contactList[$key]['msgr_msg_cont_message']);
                     //push the contact information to the array
                     array_push($usrInfo, array("name"=>$name, "isOnline"=>$isOnline, "image"=>$image, "message"=>$message));
                     //get the ready the data to be return
-                    $arr[$inboxList[$key]['msgr_msg_id']]['usrInfo'] = $usrInfo;
-                    $arr[$inboxList[$key]['msgr_msg_id']]['msgr_msg_id'] = $inboxList[$key]['msgr_msg_id'];
-                    $arr[$inboxList[$key]['msgr_msg_id']]['contact_id'] = $contact_id;
+                    $arr[$contactList[$key]['msgr_msg_id']]['usrInfo'] = $usrInfo;
+                    $arr[$contactList[$key]['msgr_msg_id']]['msgr_msg_id'] = $contactList[$key]['msgr_msg_id'];
+                    $arr[$contactList[$key]['msgr_msg_id']]['contact_id'] = $contact_id;
                 }
             }
         }
 
         $response = array(
-            'data'          =>  array_values($arr),
-            'totalInbox'    =>  $totalInbox,
+            'data'            =>  array_values($arr),
+            'totalContact'    =>  $totalContact,
         );
         return new JsonModel($response);
     }

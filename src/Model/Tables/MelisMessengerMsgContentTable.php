@@ -47,12 +47,12 @@ class MelisMessengerMsgContentTable extends MelisGenericTable
     }
     
     /**
-     * Function to load inbox list
+     * Function to load contact list
      * @param unknown $convoId
      * @param unknown $id
      * @return unknown
      */
-    public function getInbox($convoId, $id)
+    public function getContact($convoId, $id)
     {
         $select = $this->tableGateway->getSql()->select();
         

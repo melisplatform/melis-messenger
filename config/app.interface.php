@@ -92,17 +92,17 @@
                                     'jsdatas' => array()
                                 ),
                             ),
-                            'melismessenger_tool_inbox' => array(
+                            'melismessenger_tool_contact' => array(
                                 'conf' => array(
-                                    'id' => 'id_melismessenger_tool_inbox',
-                                    'melisKey' => 'melismessenger_tool_inbox',
+                                    'id' => 'id_melismessenger_tool_contact',
+                                    'melisKey' => 'melismessenger_tool_contact',
                                     'name' => 'tr_melismessenger_tool_name',
                                 ),
                                 'forward' => array(
                                     'module' => 'MelisMessenger',
                                     'controller' => 'MelisMessenger',
-                                    'action' => 'render-messenger-inbox',
-                                    'jscallback' => 'messengerTool.loadInbox();',
+                                    'action' => 'render-messenger-contact',
+                                    'jscallback' => 'messengerTool.loadContact();',
                                     'jsdatas' => array()
                                 ),
                             ),

@@ -4,7 +4,7 @@ var messengerTool = (function(window){
 	var msgrConversationId = 0; //conversation id
 	var msgrMsgOffset = 0; //message offset - starts 0 to retrieve data in the database
 	var msgrTotalMsg = 0; //total number of conversation message retrieve
-	var msgrTotalInboxList = 0; //total number of inbox retrieve
+	var msgrTotalContactList = 0; //total number of contacts retrieve
 	var msgrTotalNotificationMsg = 0; //total number of notification message
 	var msgrDetectScroll = true; //specify if detecting scroll is allowed in the chat container
 	var msgrLastMsg = {}; //get the last message on the container to use as a marker when we scroll to get more message
@@ -13,13 +13,13 @@ var messengerTool = (function(window){
 	var msgrSelectedContactId = ""; //newly selected contact id
 	var msgrSelectedContactname = ""; //newly selected contact name
 	var msgrIntervalName = null; //store the interval name
-	var msgrTimeInterval = null; //specify the time interval of refreshing the chat, inbox and message notification
+	var msgrTimeInterval = null; //specify the time interval of refreshing the chat, contacts and message notification
 	var msgrFirstLoad = true; //detect for first load
-    var msgrContactFound = false; //use to detect if we the selected is already in the inbox
+    var msgrContactFound = false; //use to detect if we the selected is already in the contact
     var tempConversationId = 0; //store the conversation id temporarily
-	var msgrInboxDefaultDisplayNo = 10; //default number of inbox to display
-    var msgrLoadTheInbox = false; //used to detect when there is new message and need the inbox to load
-	var msgrUserHasRights = false;
+	var msgrContactsDefaultDisplayNo = 10; //default number of contacts to display
+    var msgrLoadTheContact = false; //used to detect when there is new message and need the contacts to load
+	var msgrUserHasRights = false; //check user rights
 
     /**
      * Get the user rights for messenger
@@ -86,21 +86,21 @@ var messengerTool = (function(window){
     	//if user select a contact
     	if(msgrSelectedContactId != ""){
     		/**
-    		 * we must loop through each contact in the inbox
+    		 * we must loop through each contact
     		 * to find if the user selected contact is already
-    		 * in the inbox
+    		 * in the list
     		 */
-    		$('#inbox-list div.selectContact').each(function(){
-	    		$('#inbox-list div.selectContact').removeClass('active');
+    		$('#contact-list div.selectContact').each(function(){
+	    		$('#contact-list div.selectContact').removeClass('active');
 	    		//get the contact id
 	    		var id = $(this).attr('data-contact-id');
-	    		//check if contact already in the inbox
+	    		//check if contact already in the list
 	    		if(msgrSelectedContactId == id){
 	    			msgrConversationId = $(this).attr('data-convo-id');
 	    			//empty the container
 	    			emptyChatContainer();
 
-	    			//if the contact is not yet in the top, we must move it to the top of the inbox list
+	    			//if the contact is not yet in the top, we must move it to the top of the list
 	    			$(this).parent().prepend(this);
 	    			$(this).show();
 	    			var contactName = $(this).find('label.user-name').text();
@@ -122,7 +122,7 @@ var messengerTool = (function(window){
     		//create new conversation with user selected contact
     		if(!msgrContactFound){
                 var html = "";
-    			msgrBody.find('#show-empty-inbox').remove();
+    			msgrBody.find('#show-empty-contact').remove();
     			msgrIsNewConvo = true;
                 //construct html data for the newly selected contact
     			html += "<div style='display: block' class='list-group-item active'>";
@@ -143,7 +143,7 @@ var messengerTool = (function(window){
     			//get the new selected contact name
     			setConversationHeader(0, msgrSelectedContactname);
     			//prepend the contact
-                getInboxListContainer().prepend(html);
+                getContactListContainer().prepend(html);
     			//disable the button create
     			$(this).prop('disabled', true);
         	}
@@ -167,12 +167,11 @@ var messengerTool = (function(window){
             msgrConversationId = tempConversationId;
             getConversation(false, msgrConversationId);
         }else{
-		    if(msgrTotalInboxList <= 0) {
+		    if(msgrTotalContactList <= 0) {
                 $('#convo-header').empty();
-                getInboxListContainer().html('<p id="show-empty-inbox">' + translations.tr_melismessenger_tool_inbox_is_empty + '</p>');
-            }else{
-		        setConversationHeader(msgrConversationId, msgrSelectedContactname);
+                getContactListContainer().html('<p id="show-empty-contact">' + translations.tr_melismessenger_tool_contact_is_empty + '</p>');
             }
+            setConversationHeader(msgrConversationId, msgrSelectedContactname);
 		}
 	});
 
@@ -193,10 +192,10 @@ var messengerTool = (function(window){
     	e.preventDefault();
     });
 
-    //refresh inbox / contacts
-    msgrBody.on('click', '.refresh-inbox', function(e){
-    	//reload inbox
-    	melisHelper.zoneReload("id_melismessenger_tool_inbox", "melismessenger_tool_inbox");
+    //refresh contacts
+    msgrBody.on('click', '.refresh-contacts', function(e){
+    	//reload contact
+    	melisHelper.zoneReload("id_melismessenger_tool_contact", "melismessenger_tool_contact");
     	e.preventDefault();
     });
 
@@ -241,16 +240,16 @@ var messengerTool = (function(window){
     });
 
     /**
-     * Show more data in the inbox on scroll down
+     * Show more data in the contact list on scroll down
      */
-    msgrBody.on('inbox-scroll', '#inbox-list', function(){
+    msgrBody.on('contact-scroll', '#contact-list', function(){
     	var scroll = $(this).scrollTop();
     	//check if scroll bar is in the bottom
     	if(scroll + $(this).innerHeight() >= $(this)[0].scrollHeight){
-    		//show additional inbox list on scroll
-            var inbox_size = $("#inbox-list div.selectContact").size();
-            msgrInboxDefaultDisplayNo = (msgrInboxDefaultDisplayNo + 10 <= inbox_size) ? msgrInboxDefaultDisplayNo + 10 : inbox_size;
-            $('#inbox-list div.selectContact:lt('+msgrInboxDefaultDisplayNo+')').show();
+    		//show additional contact list on scroll
+            var contact_size = $("#contact-list div.selectContact").size();
+            msgrContactsDefaultDisplayNo = (msgrContactsDefaultDisplayNo + 10 <= contact_size) ? msgrContactsDefaultDisplayNo + 10 : contact_size;
+            $('#contact-list div.selectContact:lt('+msgrContactsDefaultDisplayNo+')').show();
     	}
     });
 
@@ -270,21 +269,21 @@ var messengerTool = (function(window){
     });
 
 	/**
-	* Function to display the inbox
+	* Function to display the contact
 	*/
-	function getInboxList(){
-		$.get('/melis/MelisMessenger/MelisMessenger/getInboxList', function(data){
+	function getContactList(){
+		$.get('/melis/MelisMessenger/MelisMessenger/getContactList', function(data){
 	        var html = "";
 	        if(data.data.length > 0){
-                //check for new message in the inbox
-	        	if(msgrTotalInboxList != data.totalInbox || msgrLoadTheInbox) {
-                    getInboxListContainer().empty();
-                    //store total number of inbox data
-                    msgrTotalInboxList = data.totalInbox;
+                //check for new message
+	        	if(msgrTotalContactList != data.totalContact || msgrLoadTheContact) {
+                    getContactListContainer().empty();
+                    //store total number of contact data
+                    msgrTotalContactList = data.totalContact;
                     //process the data
                     $.each(data, function (key, val) {
                         for (var i = 0; i < val.length; i++) {
-                            var name = (val[i]['contact_id'] != null) ? val[i].usrInfo[0]['name'] : "(This user has beed deleted.)";
+                            var name = (val[i]['contact_id'] != null) ? val[i].usrInfo[0]['name'] : "("+translations.tr_melismessenger_tool_user_is_deleted+")";
                             html = "<div class='list-group-item selectContact' data-contact-id=" + val[i]['contact_id'] + " data-convo-id=" + val[i]['msgr_msg_id'] + ">";
                             html += "<span class='media'>";
                             //check if conversation has many members
@@ -305,16 +304,16 @@ var messengerTool = (function(window){
                             }
                             html += "</span>";
                             html += "</div>";
-                            getInboxListContainer().append(html);
+                            getContactListContainer().append(html);
                         }
                     });
-                    //show list of inbox
-                    $('#inbox-list div.selectContact:lt(' + msgrInboxDefaultDisplayNo + ')').show();
+                    //show list of contact
+                    $('#contact-list div.selectContact:lt(' + msgrContactsDefaultDisplayNo + ')').show();
                     setConversationHeader(msgrConversationId);
-                    msgrLoadTheInbox = false;
+                    msgrLoadTheContact = false;
                 }
 	        }else{
-	        	getInboxListContainer().html('<p id="show-empty-inbox">'+translations.tr_melismessenger_tool_inbox_is_empty+'</p>');
+	        	getContactListContainer().html('<p id="show-empty-contact">'+translations.tr_melismessenger_tool_contact_is_empty+'</p>');
 	        }
     	});
 	}
@@ -355,7 +354,7 @@ var messengerTool = (function(window){
                                  getChatContainer().scrollTop(msgrLastMsg.offset().top - msgrCurOffset);
                              }
                          }
-                         msgrLoadTheInbox = true;
+                         msgrLoadTheContact = true;
                          setConversationHeader(msgrConversationId);
                      }
 
@@ -432,14 +431,13 @@ var messengerTool = (function(window){
 	    			//show the form
 	    	        $('#chat-form').show();
 	    	        //empty container
-                    getInboxListContainer().empty();
+                    getContactListContainer().empty();
 	    	        //execute the saving of conversation
 	    	        executeSave($('#sendMsgForm').serialize());
                     $('#compose-convo').prop('disabled', false);
-                    //load the inbox
+                    //load the contact
 	    	        setTimeout(function(){
-	    	        	//reload the inbox list
-		    	        getInboxList();
+		    	        getContactList();
 	    	        }, 500);
 	    		}
 	    	});
@@ -539,8 +537,8 @@ var messengerTool = (function(window){
 		var flag = false;
 		if(msgrConversationId != 0 && name == ""){
 	    	//loop through each contact to get the contact name
-	    	$('#inbox-list .selectContact').each(function(){
-	    		$('#inbox-list .selectContact').removeClass('active');
+	    	$('#contact-list .selectContact').each(function(){
+	    		$('#contact-list .selectContact').removeClass('active');
 	    		//get the conversation id
 	    		var id = $(this).attr('data-convo-id');
 	    		//if the msgrConversationId is equal to the conversation id that we select, end the search and get the name
@@ -591,9 +589,9 @@ var messengerTool = (function(window){
         });
 	}
 
-	function triggerInboxScrollEvent(el){
+	function triggerContactScrollEvent(el){
 		el.on("scroll", function(){
-            el.trigger("inbox-scroll");
+            el.trigger("contact-scroll");
         });
 	}
 
@@ -624,7 +622,7 @@ var messengerTool = (function(window){
             //set msg offset to 0
     		msgrMsgOffset = 0;
     		getConversation(false, msgrConversationId);
-            getInboxList();
+            getContactList();
     	}
     	getNewMessage();
 	}
@@ -640,15 +638,15 @@ var messengerTool = (function(window){
             triggerChatScrollEvent(getChatContainer());
         }
 	}
-	//function to use on first load and reloading the inbox list
-	function loadInbox(){
+	//function to use on first load and reloading the contact list
+	function loadContact(){
 		//check if user has rights
 		if(msgrUserHasRights) {
-            msgrTotalInboxList = 0;
-            getInboxListContainer().empty();
+            msgrTotalContactList = 0;
+            getContactListContainer().empty();
             initTokenizePlugin();
-            getInboxList();
-            triggerInboxScrollEvent(getInboxListContainer());
+            getContactList();
+            triggerContactScrollEvent(getContactListContainer());
         }
 	}
 
@@ -721,9 +719,9 @@ var messengerTool = (function(window){
         return $('#chat-container');
     }
 
-    //get the inbox list container
-    function getInboxListContainer(){
-        return $('#inbox-list');
+    //get the contact list container
+    function getContactListContainer(){
+        return $('#contact-list');
     }
 
     //get user rights
@@ -746,7 +744,7 @@ var messengerTool = (function(window){
 	return{
         // key - access name outside    // value - name of function above
 		initTokenizePlugin			:	initTokenizePlugin,
-		loadInbox					:	loadInbox,
+		loadContact					:	loadContact,
 		loadMessages				:	loadMessages
     };
 	
