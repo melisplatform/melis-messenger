@@ -70,7 +70,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         $arrayParameters = $this->makeArrayFromParameters(__METHOD__, func_get_args());
 
         // Sending service start event
-        $arrayParameters = $this->sendEvent('melismessenger_save_msg_start', $arrayParameters);
+        $arrayParameters = $this->sendEvent('melismessenger_save_msg_content_start', $arrayParameters);
 
         $contTable = $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
         $result = $contTable->save($arrayParameters['data']);
