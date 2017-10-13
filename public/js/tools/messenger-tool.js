@@ -735,12 +735,10 @@ var messengerTool = (function(window){
                 //set the interval for checking of new message
                 setMsgrTimeInterval();
                 //detect if first load
-                $(window).load(function(){
-                    setTimeout(function(){
-                        //set the msgrFirstLoad to false after 3 seconds
-                        msgrFirstLoad = false;
-                    }, 3000);
-                });
+                setTimeout(function(){
+                    //set the msgrFirstLoad to false after 3 seconds
+                    msgrFirstLoad = false;
+                }, 3000);
             }
         });
     }
