@@ -117,6 +117,8 @@
 
 #contacts-container #contact-list .thumb.pull-left{
 	margin-top:-6px;
+	padding: 3px;
+	margin-right: 10px;
 }
 
 
