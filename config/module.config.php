@@ -70,12 +70,6 @@ return array(
             'MelisMessengerInput' => 'MelisMessenger\Form\Factory\MelisMessengerInputFactory',
         )
     ),
-    'view_helpers' => array(
-        'invokables' => array(
-            'MelisMessengerFieldCollection' => 'MelisMessenger\Form\View\Helper\MelisMessengerFieldCollection',
-            'MelisMessengerFieldRow' => 'MelisMessenger\Form\View\Helper\MelisMessengerFieldRow',
-        ),
-    ),
     'view_manager' => array(
         'display_not_found_reason' => true,
         'display_exceptions'       => true,
