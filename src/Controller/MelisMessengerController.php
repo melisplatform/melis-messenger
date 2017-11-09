@@ -266,7 +266,22 @@ class MelisMessengerController extends AbstractActionController
         
         return new JsonModel($response);
     }
-    
+
+    public function getLastMessageAction()
+    {
+        $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        $message = $msgContent->getNewMessage($this->getCurrentUserId())->toArray();
+        foreach($message AS $key => $val)
+        {
+            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
+            $message[$key]['usr_image'] =  $this->getUserImage($message[$key]['usr_image']);
+        }
+        $response = array(
+            'messages'  =>  $message,
+        );
+
+        return new JsonModel($response);
+    }
     /**
      * Function to update message status
      * @return \Zend\View\Model\JsonModel
@@ -457,4 +472,6 @@ class MelisMessengerController extends AbstractActionController
 
         return $service;
     }
+
+
 }
