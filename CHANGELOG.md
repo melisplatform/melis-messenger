@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 
 
 ### Changed   
-* composer.json and dependencies  
+* composer.json and dependencies
+* add function to the service 
 
 ### Removed  
 
