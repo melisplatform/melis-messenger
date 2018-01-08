@@ -63,6 +63,7 @@ return array(
     'controllers' => array(
         'invokables' => array(
             'MelisMessenger\Controller\MelisMessenger' => 'MelisMessenger\Controller\MelisMessengerController',
+            'MelisMessenger\Controller\MelisSetup' => 'MelisMessenger\Controller\MelisSetupController',
         ),
     ),
     'form_elements' => array(
