@@ -256,6 +256,16 @@ var messengerTool = (function(window){
     //show the messenger tab when the header messenger icon is click
     msgrBody.on('click', '#id_melismessenger_tool_header_messages a.dropdown-toggle', function(){
         openMessengerTab();
+		if($('#melis-messenger-messages li').hasClass('empty-notif-li')) {
+            if ($(window).width() < 768) {
+                //toggle the menu on mobile
+                $("#id_meliscore_leftmenu").removeAttr('style');
+                $("#id_meliscore_footer").removeClass('slide-left');
+
+                $("#newplugin-cont").toggleClass("show-menu");
+                $body.removeClass('sidebar-mini');
+            }
+        }
     });
 
     /*
@@ -266,6 +276,15 @@ var messengerTool = (function(window){
         msgrMsgOffset = 0;
         var _temp_convo_id = $(this).attr('data-convo-id');
         openMessengerTab(_temp_convo_id);
+
+        if($(window).width() < 768) {
+            //toggle the menu on mobile
+            $("#id_meliscore_leftmenu").removeAttr('style');
+            $("#id_meliscore_footer").removeClass('slide-left');
+
+            $("#newplugin-cont").toggleClass("show-menu");
+            $body.removeClass('sidebar-mini');
+        }
     });
 
 	/**

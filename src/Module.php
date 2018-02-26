@@ -7,6 +7,11 @@ use Zend\ModuleManager\ModuleManager;
 use Zend\Stdlib\ArrayUtils;
 use Zend\Session\Container;
 
+/**
+ * Class Module
+ * @package MelisMessenger
+ * @require melis-core
+ */
 class Module
 {
     

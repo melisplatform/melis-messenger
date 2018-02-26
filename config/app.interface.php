@@ -37,13 +37,6 @@
                             ),
                         ),
                     ),
-                 ),
-                'datas' => array(
-                    'default' => array(//default time interval where the messages refresh its data
-                        'messenger' => array(
-                            'msg_interval' => 1000 * 60, // in milliseconds (default is 1 min)
-                        ),
-                    ),
                 ),
             ),
             'melistoolmessenger' => array(
@@ -60,6 +53,13 @@
                     'css' => array(
                        'MelisMessenger/plugins/tokenize2.min.css',
                        'MelisMessenger/css/messenger-tool.css',
+                    ),
+                ),
+                'datas' => array(
+                    'default' => array(//default time interval where the messages refresh its data
+                        'messenger' => array(
+                            'msg_interval' => 1000 * 60, // in milliseconds (default is 1 min)
+                        ),
                     ),
                 ),
                 'interface' => array(

@@ -41,6 +41,47 @@ return array(
                     ),
                 ),    
         	),
+            /*
+             * This route will handle the
+             * alone setup of a module
+             */
+            'setup-melis-messenger' => array(
+                'type'    => 'Literal',
+                'options' => array(
+                    'route'    => '/MelisMessenger',
+                    'defaults' => array(
+                        '__NAMESPACE__' => 'MelisMessenger\Controller',
+                        'controller'    => 'MelisSetup',
+                        'action'        => 'setup-form',
+                    ),
+                ),
+                'may_terminate' => true,
+                'child_routes' => array(
+                    'default' => array(
+                        'type'    => 'Segment',
+                        'options' => array(
+                            'route'    => '/[:controller[/:action]]',
+                            'constraints' => array(
+                                'controller' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                'action'     => '[a-zA-Z][a-zA-Z0-9_-]*',
+                            ),
+                            'defaults' => array(
+//
+                            ),
+                        ),
+                    ),
+                    'setup' => array(
+                        'type' => 'Segment',
+                        'options' => array(
+                            'route' => '/setup',
+                            'defaults' => array(
+                                'controller' => 'MelisMessenger\Controller\MelisSetup',
+                                'action' => 'setup-form',
+                            ),
+                        ),
+                    ),
+                ),
+            ),
         ),
     ),
     'translator' => array(
@@ -63,18 +104,13 @@ return array(
     'controllers' => array(
         'invokables' => array(
             'MelisMessenger\Controller\MelisMessenger' => 'MelisMessenger\Controller\MelisMessengerController',
+            'MelisMessenger\Controller\MelisSetup' => 'MelisMessenger\Controller\MelisSetupController',
         ),
     ),
     'form_elements' => array(
         'factories' => array(
             'MelisMessengerInput' => 'MelisMessenger\Form\Factory\MelisMessengerInputFactory',
         )
-    ),
-    'view_helpers' => array(
-        'invokables' => array(
-            'MelisMessengerFieldCollection' => 'MelisMessenger\Form\View\Helper\MelisMessengerFieldCollection',
-            'MelisMessengerFieldRow' => 'MelisMessenger\Form\View\Helper\MelisMessengerFieldRow',
-        ),
     ),
     'view_manager' => array(
         'display_not_found_reason' => true,

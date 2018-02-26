@@ -216,15 +216,14 @@ class MelisMessengerController extends AbstractActionController
      */
     public function getConversationAction()
     {
-        $msg =  $this->getServiceLocator()->get('MelisMessengerMsgTable');
+        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
         $id = (int) $this->params()->fromRoute('id', 0);
-        $offset = (int) $this->params()->fromQuery('offset', 0);
         $limit = (int) $this->params()->fromQuery('limit', 10);
+        $offset = (int) $this->params()->fromQuery('offset', 0);
         //get the convo list
-
-        $totalMessages = count($msg->getConversation($id)->toArray());
+        $totalMessages = count($msgService->getConversation($id));
         
-        $convo = $msg->getConversationWithLimit($id, $limit, $offset)->toArray();
+        $convo = $msgService->getConversationWithLimit($id, $limit, $offset);
 
         if($offset == 0)
             $convo = array_reverse($convo);
@@ -252,8 +251,8 @@ class MelisMessengerController extends AbstractActionController
      */
     public function getNewMessageAction()
     {
-        $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
-        $message = $msgContent->getNewMessage($this->getCurrentUserId())->toArray();
+        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
+        $message = $msgService->getNewMessage($this->getCurrentUserId());
         foreach($message AS $key => $val)
         {
             $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
@@ -261,19 +260,34 @@ class MelisMessengerController extends AbstractActionController
             $message[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($message[$key]['msgr_msg_cont_date']));
         }
         $response = array(
-            'messages'  =>  $message,
+            'messages'  =>  (sizeof($message) > 0) ? $message : array(),
         );
         
         return new JsonModel($response);
     }
-    
+
+    public function getLastMessageAction()
+    {
+        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
+        $message = $msgService->getNewMessage($this->getCurrentUserId());
+        foreach($message AS $key => $val)
+        {
+            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
+            $message[$key]['usr_image'] =  $this->getUserImage($message[$key]['usr_image']);
+        }
+        $response = array(
+            'messages'  =>  $message,
+        );
+
+        return new JsonModel($response);
+    }
     /**
      * Function to update message status
      * @return \Zend\View\Model\JsonModel
      */
     public function updateMessageStatusAction()
     {
-        $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
         //get the request
         $request = $this->getRequest();
         $post_var = get_object_vars($request->getPost());
@@ -285,7 +299,7 @@ class MelisMessengerController extends AbstractActionController
             if($post_var['id'] != "")
             {
                 $arr = array("msgr_msg_cont_status" => 0);
-                $res = $msgContent->updateMessageStatus($arr, $post_var['id'], $user_id);
+                $res = $msgService->updateMessageStatus($arr, $post_var['id'], $user_id);
             }
         }
         $response = array(
@@ -305,16 +319,16 @@ class MelisMessengerController extends AbstractActionController
         $totalContact = 0;
         //get current user id
         $userId  = $this->getCurrentUserId();
-        $list = $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
         
         $convoIds = $this->prepareConversationId($userId);
         //check if conversation id is not empty
         if(!empty($convoIds))
         {
             //count number of contacts
-            $totalContact = count($list->getContact($convoIds, $userId)->toArray());
+            $totalContact = count($msgService->getContactList($convoIds, $userId));
             //get the list of contact
-            $contactList = $list->getContact($convoIds, $userId)->toArray();
+            $contactList = $msgService->getContactList($convoIds, $userId);
             //loop through each contact list to process the results before returning to view
             foreach($contactList AS $key => $val)
             {
@@ -365,7 +379,7 @@ class MelisMessengerController extends AbstractActionController
     public function getMsgTimeIntervalAction()
     {    
         $config = $this->getServiceLocator()->get('config');
-        $msgrConfig = $config['plugins']['meliscore']['datas']['default']['messenger']['msg_interval'];
+        $msgrConfig = $config['plugins']['melistoolmessenger']['datas']['default']['messenger']['msg_interval'];
         $response = array(
             "interval" => $msgrConfig,
         );
@@ -395,16 +409,9 @@ class MelisMessengerController extends AbstractActionController
      */
     private function prepareConversationId($userId)
     {
-        $msg = $this->getServiceLocator()->get('MelisMessengerMsgTable');
-        $mbr = $this->getServiceLocator()->get('MelisMessengerMsgMembersTable');
-        
-        //get the conversation id from MelisMesengerMsgTable
-        $msgConvoId = $msg->getConversationIdByUserId($userId)->toArray();
-        //get the conversation id from MelisMessengerMsgMembersTable
-        $mbrConvoId = $mbr->getConversationIdByUserId($userId)->toArray();
-        //merge the results
-        $ids = array_merge($msgConvoId, $mbrConvoId);
-        
+        $msgService = $this->getServiceLocator()->get('MelisMessengerService');
+        $ids = $msgService->prepareConversationId($userId);
+
         $data = array();
         $str = "";
         //loop through each id and remove the key and store the value to array
@@ -457,4 +464,6 @@ class MelisMessengerController extends AbstractActionController
 
         return $service;
     }
+
+
 }
