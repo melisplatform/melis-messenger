@@ -2,6 +2,9 @@
 return array(
     'plugins' => array(
         'melismessenger' => array(
+            'conf' => array(
+                'rightsDisplay' => 'none',
+            ),
             'forms' => array(
                 'melismessenger_conversation_form' => array(
                     'attributes' => array(
