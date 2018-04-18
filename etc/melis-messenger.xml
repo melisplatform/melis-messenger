@@ -1,0 +1,19 @@
+<melis-messenger>
+	<package_info>
+		<mp_title>Melis MarketPlace</mp_title>
+		<mp_subtitle>The module that brings a messenger to your platform.</mp_subtitle>
+		<mp_description>
+			This module adds a messenger to Melis Platform and enables users to talk to each other while connected.<br /> 
+			Multiple conversation are not yet allowed but will follow in an update.
+		</mp_description>
+		<mp_maintainers>melisplatform</mp_maintainers>
+		<mp_group>Melis Core</mp_group>
+	</package_info>
+	<package_images>
+		<img_1>
+			<mpi_image_title>Melis Messenger</mpi_image_title>
+			<mpi_image_file>melis-messenger_1.JPG</mpi_image_file>
+			<mpi_image_main>1</mpi_image_main>
+		</img_1>
+	</package_images>
+</melis-messenger>
