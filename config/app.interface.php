@@ -47,13 +47,27 @@
                 ),
                 'ressources' => array(
                     'js' => array(
-                       'MelisMessenger/plugins/tokenize2.min.js',
-                       'MelisMessenger/js/tools/messenger-tool.js',
+                       '/MelisMessenger/plugins/tokenize2.min.js',
+                       '/MelisMessenger/js/tools/messenger-tool.js',
                     ),
                     'css' => array(
-                       'MelisMessenger/plugins/tokenize2.min.css',
-                       'MelisMessenger/css/messenger-tool.css',
+                       '/MelisMessenger/plugins/tokenize2.min.css',
+                       '/MelisMessenger/css/messenger-tool.css',
                     ),
+                    /**
+                     * the "build" configuration compiles all assets into one file to make
+                     * lesser requests
+                     */
+                    'build' => [
+                        // lists of assets that will be loaded in the layout
+                        'css' => [
+                            '/MelisMessenger/build/css/bundle.css',
+
+                        ],
+                        'js' => [
+                            '/MelisMessenger/build/js/bundle.js',
+                        ]
+                    ]
                 ),
                 'datas' => array(
                     'default' => array(//default time interval where the messages refresh its data
