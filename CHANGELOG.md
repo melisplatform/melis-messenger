@@ -6,12 +6,13 @@ All notable changes to this project will be documented in this file.
 
 
 ### Changed   
-* composer.json and dependencies
-* add function to the service 
-* fixed on mobile
 
 ### Removed  
 
 
-## [2.2.1] - 2017-10-17
-Latest stable version
+## Release Notes
+## v2.4.0 - 2018-05-03
+* Added bundled CSS and JS
+* Updated composer.json dependencies
+* Fixed UI on mobile
+
