@@ -174,7 +174,7 @@ class MelisMessengerController extends AbstractActionController
         if($request->isPost())
         {
             //get and sanitize the data
-//            $postValues = $this->getTool()->sanitizeRecursive(get_object_vars($request->getPost()), array(), false, true);
+//            $postValues = $this->getTool()->sanitizeRecursive(get_object_vars($request->getPost()), array(), false, false);
             $postValues = get_object_vars($request->getPost());
 
             //assign the data to the form
@@ -234,7 +234,7 @@ class MelisMessengerController extends AbstractActionController
             $convo[$key]['usr_image'] = $this->getUserImage($convo[$key]['usr_image']);
             
             $convo[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($convo[$key]['msgr_msg_cont_date']));
-            $convo[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($convo[$key]['msgr_msg_cont_message']);
+//            $convo[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($convo[$key]['msgr_msg_cont_message']);
         }
         
         //prepare the data to return
@@ -256,7 +256,7 @@ class MelisMessengerController extends AbstractActionController
         $message = $msgService->getNewMessage($this->getCurrentUserId());
         foreach($message AS $key => $val)
         {
-            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
+//            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
             $message[$key]['usr_image'] =  $this->getUserImage($message[$key]['usr_image']);
             $message[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($message[$key]['msgr_msg_cont_date']));
         }
@@ -273,7 +273,7 @@ class MelisMessengerController extends AbstractActionController
         $message = $msgService->getNewMessage($this->getCurrentUserId());
         foreach($message AS $key => $val)
         {
-            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
+//            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
             $message[$key]['usr_image'] =  $this->getUserImage($message[$key]['usr_image']);
         }
         $response = array(
@@ -355,7 +355,8 @@ class MelisMessengerController extends AbstractActionController
                     $isOnline = $contactList[$key]['usr_is_online'];
                     $image = $this->getUserImage($contactList[$key]['usr_image']);
                     $contact_id = $contactList[$key]['usr_id'];
-                    $message = $this->getTool()->sanitize($contactList[$key]['msgr_msg_cont_message']);
+//                    $message = $this->getTool()->sanitize($contactList[$key]['msgr_msg_cont_message']);
+                    $message = $contactList[$key]['msgr_msg_cont_message'];
                     //push the contact information to the array
                     array_push($usrInfo, array("name"=>$name, "isOnline"=>$isOnline, "image"=>$image, "message"=>$message));
                     //get the ready the data to be return
