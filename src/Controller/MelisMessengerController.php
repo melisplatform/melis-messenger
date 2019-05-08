@@ -174,7 +174,8 @@ class MelisMessengerController extends AbstractActionController
         if($request->isPost())
         {
             //get and sanitize the data
-            $postValues = $this->getTool()->sanitizeRecursive(get_object_vars($request->getPost()), array(), false, true);
+//            $postValues = $this->getTool()->sanitizeRecursive(get_object_vars($request->getPost()), array(), false, true);
+            $postValues = get_object_vars($request->getPost());
 
             //assign the data to the form
             $propertyForm->setData($postValues);
