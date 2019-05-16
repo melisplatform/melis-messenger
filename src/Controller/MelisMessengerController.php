@@ -317,6 +317,9 @@ class MelisMessengerController extends AbstractActionController
     {
         $arr = array();
         $usrInfo = array();
+        $onlineContacts = array();
+        $offlineContacts = array();
+        $deletedContacts = array();
         $totalContact = 0;
         //get current user id
         $userId  = $this->getCurrentUserId();
@@ -331,6 +334,28 @@ class MelisMessengerController extends AbstractActionController
             //get the list of contact
             $contactList = $msgService->getContactList($convoIds, $userId);
             //loop through each contact list to process the results before returning to view
+            $sortedArr = array();
+            foreach ($contactList as $key => $row)
+            {
+                $sortedArr[$key] = $row["usr_firstname"];
+            }
+
+            array_multisort($sortedArr, SORT_ASC, $contactList);
+            foreach($contactList as $key => $contact){
+                if($contact["usr_is_online"] == "1"){
+                    array_push($onlineContacts,$contact);
+                }else if($contact["usr_is_online"] == "0"){
+                    array_push($offlineContacts,$contact);
+                }else{
+                    array_push($deletedContacts,$contact);
+                }
+                unset($contactList[$key]);
+            }
+            if(empty($contactList)){
+                $contactList = $this->mergeArray($contactList,$onlineContacts);
+                $contactList = $this->mergeArray($contactList,$offlineContacts);
+                $contactList = $this->mergeArray($contactList,$deletedContacts);
+            }
             foreach($contactList AS $key => $val)
             {
                 /*
@@ -372,6 +397,14 @@ class MelisMessengerController extends AbstractActionController
             'totalContact'    =>  $totalContact,
         );
         return new JsonModel($response);
+    }
+
+    private function mergeArray($array1, $array2){
+        if(!empty($array2))
+            foreach($array2 as $arr2){
+                array_push($array1, $arr2);
+            }
+        return $array1;
     }
     
     /**
