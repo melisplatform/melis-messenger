@@ -209,6 +209,7 @@
 .widget-chat .media small.date {
 	text-align: left;
 }
+#id_meliscore_user_profile_tabs .nav-tabs li.active a,
 #id_meliscore_user_profile_tabs .nav-tabs li.active a.active {
 	border: none;
 }
