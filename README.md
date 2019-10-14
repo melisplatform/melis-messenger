@@ -38,6 +38,7 @@ In case of problems, SQL files are located here:
 
 * MelisMessengerService  
 Provides services to send and get messages
+
 File: /melis-messenger/src/Service/MelisMessengerService.php  
 ```
 // Get the service
@@ -55,4 +56,4 @@ See also the list of [contributors](https://github.com/melisplatform/melis-messe
 
 ## License
 
-This project is licensed under the OSL-3.0 License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the OSL-3.0 License - see the [LICENSE](LICENSE) file for details
