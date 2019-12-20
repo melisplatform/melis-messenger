@@ -138,7 +138,7 @@ var messengerTool = (function(window){
                         html +=	"<span id='remove-new-convo' class='float-right btn btn-sm'>x</span>"
                         html += "<span class='media'>";
                             html += "<span class='media-msgrBody media-msgrBody-inline'>";
-                                html += "<label>"+translations.tr_melismessenger_tool_new_message+" <b>"+msgrSelectedContactname+"</b></label>";
+                                html += "<label>"+translations.tr_melismessenger_tool_new_message+" <strong>"+msgrSelectedContactname+"</strong></label>";
                             html +="</span>";
                         html +="</span>";
                         html +="</a>";
@@ -332,17 +332,17 @@ var messengerTool = (function(window){
                                 if (val[i].usrInfo.length > 1) {
                                     //loop to each user(preparation for group messages)
                                     for (var x = 0; x < val[i].usrInfo.length; x++) {
-                                        html += "<span class='media-msgrBody media-msgrBody-inline'>";
+                                        html += "<div class='media-msgrBody media-msgrBody-inline clearfix'>";
                                         html += "<label class='user-name'>" + ((x == 0) ? '' : ', ') + (name) + "<i class='icon-flag text-primary icon-2x'></i></label>";
-                                        html += "</span>";
+                                        html += "</div>";
                                     }
                                 } else {
                                     html += "<img src=" + (val[i].usrInfo[0]['image']) + " alt='' width='35' class='thumb img-fluid rounded-circle float-left' />";
-                                    html += "<span class='media-msgrBody media-msgrBody-inline'>";
+                                    html += "<div class='media-msgrBody media-msgrBody-inline clearfix'>";
                                     html += "<span class='" + ((val[i].usrInfo[0]['isOnline'] != 0 && val[i].usrInfo[0]['isOnline'] != null) ? 'text-success float-right' : 'text-danger float-right') + "'><i class='fa fa-fw fa-circle'></i></span>";
                                     html += "<label class='user-name'>" + (name) + "<i class='icon-flag text-primary icon-2x'></i></label>";
                                     html += "<div id='messenger-msg-cont'><span id='messenger-msg'><small>" + (val[i].usrInfo[0]['message']) + "</small></span></div>";
-                                    html += "</span>";
+                                    html += "</div>";
                                 }
                                 html += "</span>";
                                 html += "</div>";
