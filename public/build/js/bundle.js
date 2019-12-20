@@ -539,7 +539,7 @@ var messengerTool = (function(window){
                                     '<li id="'+(msg.msgr_msg_cont_id)+'" data-convo-id="'+(msg.msgr_msg_id)+'">' +
                                     '	<img src="'+(msg.usr_image)+'" alt="" width="45" class="thumb img-fluid rounded-circle float-left" />' +
                                     '    <span class="media-msgrBody media-msgrBody-inline">' +
-                                    '        <span class="float-right"><small>'+(msg.msgr_msg_cont_date)+'</small></span><br/>'+
+                                    '        <span class="date-and-time"><small>'+(msg.msgr_msg_cont_date)+'</small></span><br/>'+
                                     '        <label class="user-name"><span>'+(msg.usr_firstname+" "+msg.usr_lastname)+'</span></label>' +
                                     '    </span> '+
                                     '	 <div id="messenger-msg-cont"><span id="messenger-msg"><small>'+(msg.msgr_msg_cont_message)+'</small></span></div>' +
