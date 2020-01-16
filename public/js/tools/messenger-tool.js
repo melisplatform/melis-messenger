@@ -422,9 +422,9 @@ var messengerTool = (function(window){
                 for ( var i = 0; i < data.length; i++ ) {
                     var image = data[i].usr_image;
                     //check if message came from the user
-                    if ( data[i].msgr_msg_cont_sender_id == id || id == null ) { //display the current user message
+                    if ( data[i].msgr_msg_cont_sender_id == id || id == null ) { //display the contact message(s)
                         html =
-                                '<div class="media innerAll clearfix">'+
+                                '<div class="media innerAll contact-msg-block clearfix">'+
                                 '	<img src="'+image+'" alt="" class="thumb img-fluid rounded-circle float-right" width="40">'+
                                 '	<div class="media-msgrBody">'+
                                 '		<small class="date"><cite>'+data[i].msgr_msg_cont_date+'</cite></small>'+
@@ -432,10 +432,10 @@ var messengerTool = (function(window){
                                 '	</div>'+
                                 '</div>'
                             ;
-                    } else {//display the message of the contact
+                    } else {//display the message of the current user
                         var name = (data[i].usr_firstname != null && data[i].usr_lastname != null) ? data[i].usr_firstname+" "+data[i].usr_lastname : "("+translations.tr_melismessenger_tool_user_is_deleted+")" ;
                             html =
-                                    '<div class="media innerAll">'+
+                                    '<div class="media innerAll user-msg-block">'+
                                     '	<small class="chat-contact-name strong">'+name+'</small>'+
                                     '	<img src="'+image+'" alt="" class="thumb img-fluid rounded-circle float-left" width="40">'+
                                     '	<div class="media-msgrBody">'+

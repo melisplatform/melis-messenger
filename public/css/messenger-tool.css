@@ -218,6 +218,14 @@
 	width: 52px;
 }
 
+.user-msg-block .date {
+	text-align: right !important;
+}
+
+.contact-msg-block .date {
+	text-align: left;
+}
+
 @media only screen and (min-width: 992px) and (max-width: 1122px) {
 	#sendMsgForm #btn-send-message{
 		height: 209px !important;
