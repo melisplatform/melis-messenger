@@ -199,8 +199,31 @@
 	padding-right: 0;
 }
 
-#sendMsgForm #btn-send-message{
+/* changes by: Junry prior to bootstrap 4 jquery 3 */
+#chat-container .media {
+	display: block;
+}
+#id_melismessenger_tool_contact .thumb {
+	margin-right: 1rem;
+}
+.widget-chat .media small.date {
+	text-align: left;
+}
+#id_meliscore_user_profile_tabs .nav-tabs li.active a,
+#id_meliscore_user_profile_tabs .nav-tabs li.active a.active {
+	border: none;
+}
+#id_melismessenger_tool_content #sendMsgForm #btn-send-message {
+	height: 198px;
+	width: 52px;
+}
 
+.user-msg-block .date {
+	text-align: right !important;
+}
+
+.contact-msg-block .date {
+	text-align: left;
 }
 
 @media only screen and (min-width: 992px) and (max-width: 1122px) {
@@ -212,6 +235,13 @@
 @media only screen and (max-width: 767px) {
 	#sendMsgForm #btn-send-message{
 		height: 50px !important;
+	}
+	#melis-messenger-messages img {
+		margin-top: 0;
+		margin-right: 1rem;
+	}
+	#messenger-msg-cont {
+		margin-top: 1rem;
 	}
 }
 
