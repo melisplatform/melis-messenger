@@ -15,13 +15,21 @@ use Zend\Db\Sql\Join;
 
 class MelisMessengerMsgTable extends MelisGenericTable 
 {
-    protected $tableGateway;
-    protected $idField;
-    
-    public function __construct(TableGateway $tableGateway)
+    /**
+     * Table name
+     */
+    const TABLE = 'melis_messenger_msg';
+    /**
+     * Primary key
+     */
+    const PRIMARY_KEY = 'msgr_msg_id';
+
+    /**
+     * MelisCmsNewsTable constructor.
+     */
+    public function __construct()
     {
-        parent::__construct($tableGateway);
-        $this->idField = 'msgr_msg_id';
+        $this->idField = self::PRIMARY_KEY;
     }
     
     /**

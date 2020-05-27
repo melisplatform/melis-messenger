@@ -9,13 +9,13 @@
 
 namespace MelisMessenger\Service;
 
-use MelisCore\Service\MelisCoreGeneralService;
 use MelisCore\Service\MelisCoreRightsService;
+use MelisCore\Service\MelisGeneralService;
 
 /**
  * This service handles access to the messenger
  */
-class MelisMessengerService extends MelisCoreGeneralService
+class MelisMessengerService extends MelisGeneralService
 {
     /**
      * Saving the newly created conversation
@@ -30,7 +30,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_save_msg_start', $arrayParameters);
 
-        $msgTable = $this->getServiceLocator()->get('MelisMessengerMsgTable');
+        $msgTable = $this->getServiceManager()->get('MelisMessengerMsgTable');
         $result = $msgTable->save($arrayParameters['data']);
 
         // Adding results to parameters for events treatment if needed
@@ -54,7 +54,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_save_msg_members_start', $arrayParameters);
 
-        $mbrTable = $this->getServiceLocator()->get('MelisMessengerMsgMembersTable');
+        $mbrTable = $this->getServiceManager()->get('MelisMessengerMsgMembersTable');
         $result = $mbrTable->save($arrayParameters['data']);
 
         // Adding results to parameters for events treatment if needed
@@ -78,7 +78,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_save_msg_content_start', $arrayParameters);
 
-        $contTable = $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        $contTable = $this->getServiceManager()->get('MelisMessengerMsgContentTable');
         $result = $contTable->save($arrayParameters['data']);
 
         // Adding results to parameters for events treatment if needed
@@ -102,7 +102,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_get_conversation_start', $arrayParameters);
 
-        $msgTable =  $this->getServiceLocator()->get('MelisMessengerMsgTable');
+        $msgTable =  $this->getServiceManager()->get('MelisMessengerMsgTable');
         $result = $msgTable->getConversation($arrayParameters['id'])->toArray();
 
         // Adding results to parameters for events treatment if needed
@@ -129,7 +129,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_get_conversation_with_limit_start', $arrayParameters);
 
-        $msgTable =  $this->getServiceLocator()->get('MelisMessengerMsgTable');
+        $msgTable =  $this->getServiceManager()->get('MelisMessengerMsgTable');
         $result = $msgTable->getConversationWithLimit($arrayParameters['id'], $arrayParameters['limit'], $arrayParameters['offset'])->toArray();
 
         // Adding results to parameters for events treatment if needed
@@ -153,7 +153,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_get_new_message_start', $arrayParameters);
 
-        $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        $msgContent =  $this->getServiceManager()->get('MelisMessengerMsgContentTable');
         $result = $msgContent->getNewMessage($arrayParameters['id'])->toArray();
 
         // Adding results to parameters for events treatment if needed
@@ -180,7 +180,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_update_message_status_start', $arrayParameters);
 
-        $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        $msgContent =  $this->getServiceManager()->get('MelisMessengerMsgContentTable');
         $result = $msgContent->updateMessageStatus($arrayParameters['data'], $arrayParameters['msg_id'], $arrayParameters['user_id']);
 
         // Adding results to parameters for events treatment if needed
@@ -205,7 +205,7 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_get_contact_list_start', $arrayParameters);
 
-        $msgContent =  $this->getServiceLocator()->get('MelisMessengerMsgContentTable');
+        $msgContent =  $this->getServiceManager()->get('MelisMessengerMsgContentTable');
         $result = $msgContent->getContact($arrayParameters['convo_id'], $arrayParameters['user_id'])->toArray();
 
         // Adding results to parameters for events treatment if needed
@@ -231,8 +231,8 @@ class MelisMessengerService extends MelisCoreGeneralService
         // Sending service start event
         $arrayParameters = $this->sendEvent('melismessenger_prepare_conversation_id_start', $arrayParameters);
 
-        $msgTable = $this->getServiceLocator()->get('MelisMessengerMsgTable');
-        $mbrTable = $this->getServiceLocator()->get('MelisMessengerMsgMembersTable');
+        $msgTable = $this->getServiceManager()->get('MelisMessengerMsgTable');
+        $mbrTable = $this->getServiceManager()->get('MelisMessengerMsgMembersTable');
         //get the conversation id from MelisMesengerMsgTable
         $msgConvoId = $msgTable->getConversationIdByUserId($arrayParameters['userId'])->toArray();
         //get the conversation id from MelisMessengerMsgMembersTable
@@ -256,8 +256,8 @@ class MelisMessengerService extends MelisCoreGeneralService
     public function getUserRightsForMessenger(){
         $arrayParameters = array();
 
-        $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
-        $melisCoreRights = $this->getServiceLocator()->get('MelisCoreRights');
+        $melisCoreAuth = $this->getServiceManager()->get('MelisCoreAuth');
+        $melisCoreRights = $this->getServiceManager()->get('MelisCoreRights');
         $xmlRights = $melisCoreAuth->getAuthRights();
         $isAccessible = $melisCoreRights->isAccessible($xmlRights, MelisCoreRightsService::MELISCORE_PREFIX_INTERFACE, "/melismessenger");
 
