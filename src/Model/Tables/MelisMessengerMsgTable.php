@@ -10,8 +10,6 @@
 namespace MelisMessenger\Model\Tables;
 
 use MelisCore\Model\Tables\MelisGenericTable;
-use Zend\Db\TableGateway\TableGateway;
-use Zend\Db\Sql\Join;
 
 class MelisMessengerMsgTable extends MelisGenericTable 
 {
@@ -37,7 +35,7 @@ class MelisMessengerMsgTable extends MelisGenericTable
      * @param int $id
      * @param int $limit
      * @param int $offset
-     * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
+     * @return NULL|\Laminas\Db\ResultSet\ResultSetInterface
      */
     public function getConversationWithLimit($id, $limit, $offset){
         $select = $this->tableGateway->getSql()->select();
@@ -56,7 +54,7 @@ class MelisMessengerMsgTable extends MelisGenericTable
      * Function to load conversation by conversation ID
      *
      * @param unknown $id
-     * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
+     * @return NULL|\Laminas\Db\ResultSet\ResultSetInterface
      */
     public function getConversation($id){
         $select = $this->tableGateway->getSql()->select();
@@ -71,7 +69,7 @@ class MelisMessengerMsgTable extends MelisGenericTable
     /**
      * Function to get the conversation ID buy user Id
      * @param Int $userId
-     * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
+     * @return NULL|\Laminas\Db\ResultSet\ResultSetInterface
      */
     public function getConversationIdByUserId($userId){
         $select = $this->tableGateway->getSql()->select();

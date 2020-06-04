@@ -10,9 +10,7 @@
 namespace MelisMessenger\Model\Tables;
 
 use MelisCore\Model\Tables\MelisGenericTable;
-use Zend\Db\TableGateway\TableGateway;
-use Zend\Db\Sql\Expression;
-use Zend\Db\Sql\Select;
+use Laminas\Db\Sql\Expression;
 
 class MelisMessengerMsgContentTable extends MelisGenericTable 
 {
@@ -37,7 +35,7 @@ class MelisMessengerMsgContentTable extends MelisGenericTable
      * Function to get new messages for notification
      * 
      * @param unknown $id
-     * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
+     * @return NULL|\Laminas\Db\ResultSet\ResultSetInterface
      */
     public function getNewMessage($id)
     {

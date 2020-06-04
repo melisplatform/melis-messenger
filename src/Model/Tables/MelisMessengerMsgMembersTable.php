@@ -10,7 +10,6 @@
 namespace MelisMessenger\Model\Tables;
 
 use MelisCore\Model\Tables\MelisGenericTable;
-use Zend\Db\TableGateway\TableGateway;
 
 class MelisMessengerMsgMembersTable extends MelisGenericTable 
 {
@@ -34,7 +33,7 @@ class MelisMessengerMsgMembersTable extends MelisGenericTable
     /**
      * Function to get the conversation ID by user ID
      * @param Int $userId
-     * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
+     * @return NULL|\Laminas\Db\ResultSet\ResultSetInterface
      */
     public function getConversationIdByUserId($userId)
     {
