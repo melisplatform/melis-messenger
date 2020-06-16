@@ -9,12 +9,12 @@
 
 namespace MelisMessenger\Controller;
 
-use MelisCore\Controller\AbstractActionController;
+use MelisCore\Controller\MelisAbstractActionController;
 use MelisCore\Service\MelisCoreRightsService;
 use Laminas\View\Model\ViewModel;
 use Laminas\View\Model\JsonModel;
 
-class MelisMessengerController extends AbstractActionController
+class MelisMessengerController extends MelisAbstractActionController
 {
     /**
      * Display the message notification
