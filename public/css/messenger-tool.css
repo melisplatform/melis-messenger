@@ -126,6 +126,7 @@
 	width: 270px;
 	max-height: 250px;
 	overflow: auto;
+	position: absolute;
 }
 
 #melis-messenger-messages .user-name{
@@ -136,12 +137,14 @@
 }
 
 #melis-messenger-messages li{
+	border: 0;
 	padding: 10px;
+	width: 100%;
 }
-
 
 #melis-messenger-messages img{
 	margin-top: 18px;
+	margin-right: 15px;
 }
 
 
@@ -225,6 +228,8 @@
 .contact-msg-block .date {
 	text-align: left;
 }
+
+
 
 @media only screen and (min-width: 992px) and (max-width: 1122px) {
 	#sendMsgForm #btn-send-message{

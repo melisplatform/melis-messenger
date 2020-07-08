@@ -88,6 +88,7 @@ var messengerTool = (function(window){
          * Create a conversation after the user select a contact
          */
         msgrBody.on('click', '#compose-convo', function(e){
+            var $this = $(this);
             //if user select a contact
             if ( msgrSelectedContactId != "" ) {
                 /**
