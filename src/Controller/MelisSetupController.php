@@ -9,7 +9,7 @@
 
 namespace MelisMessenger\Controller;
 
-use Zend\Mvc\Controller\AbstractActionController;
+use MelisCore\Controller\MelisAbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\View\Model\JsonModel;
 use Zend\Validator\File\Size;
@@ -18,14 +18,8 @@ use Zend\Validator\File\Upload;
 use Zend\File\Transfer\Adapter\Http;
 use Zend\Session\Container;
 
-class MelisSetupController extends AbstractActionController
+class MelisSetupController extends MelisAbstractActionController
 {
-    // public function setupFormAction()
-    // {
-    //     return null;
-
-    // }
-
     public function setupResultAction()
     {
         return null;

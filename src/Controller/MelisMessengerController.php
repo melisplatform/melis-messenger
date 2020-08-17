@@ -9,20 +9,20 @@
 
 namespace MelisMessenger\Controller;
 
+use MelisCore\Controller\MelisAbstractActionController;
 use MelisCore\Service\MelisCoreRightsService;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
-use Zend\View\Model\JsonModel;
+use Laminas\View\Model\ViewModel;
+use Laminas\View\Model\JsonModel;
 
-class MelisMessengerController extends AbstractActionController
+class MelisMessengerController extends MelisAbstractActionController
 {
     /**
      * Display the message notification
-     * @return \Zend\View\Model\ViewModel
+     * @return \Laminas\View\Model\ViewModel
      */
     public function headerMessengerAction()
     {
-        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
+        $messengerService = $this->getServiceManager()->get('MelisMessengerService');
         $melisKey = $this->params()->fromRoute('melisKey', '');
         
         $view = new ViewModel();
@@ -35,11 +35,11 @@ class MelisMessengerController extends AbstractActionController
      * 
      * Display the messenger tool
      * 
-     * @return \Zend\View\Model\ViewModel
+     * @return \Laminas\View\Model\ViewModel
      */
     public function renderMessengerAction()
     {
-        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
+        $messengerService = $this->getServiceManager()->get('MelisMessengerService');
         $melisKey = $this->params()->fromRoute('melisKey', '');
     	$view = new ViewModel();
     	$view->melisKey = $melisKey;
@@ -51,7 +51,7 @@ class MelisMessengerController extends AbstractActionController
      *
      * Function to render contact
      *
-     * @return \Zend\View\Model\ViewModel
+     * @return \Laminas\View\Model\ViewModel
      */
     public function renderMessengerContactAction()
     {
@@ -60,7 +60,7 @@ class MelisMessengerController extends AbstractActionController
         /*
          * Get list of registered users
          */
-        $users = $this->getServiceLocator()->get('MelisCoreTableUser');
+        $users = $this->getServiceManager()->get('MelisCoreTableUser');
         $usersList = $users->fetchAll()->toArray();
         
         $arr = array();
@@ -87,17 +87,17 @@ class MelisMessengerController extends AbstractActionController
     /**
      * Display the content of the messenger (the chatbox and the conversation)
      *
-     * @return \Zend\View\Model\ViewModel
+     * @return \Laminas\View\Model\ViewModel
      */
     public function renderMessengerToolContentAction()
     {
         $melisKey = $this->params()->fromRoute('melisKey', '');
         // Get Element form for Messenger event
-        $melisMelisCoreConfig = $this->serviceLocator->get('MelisCoreConfig');
+        $melisMelisCoreConfig = $this->getServiceManager()->get('MelisCoreConfig');
         $appConfigForm = $melisMelisCoreConfig->getFormMergedAndOrdered('melismessenger/forms/melismessenger_conversation_form','melismessenger_conversation_form');
         
-        $factory = new \Zend\Form\Factory();
-        $formElements = $this->getServiceLocator()->get('FormElementManager');
+        $factory = new \Laminas\Form\Factory();
+        $formElements = $this->getServiceManager()->get('FormElementManager');
         $factory->setFormElementManager($formElements);
         $propertyForm = $factory->createForm($appConfigForm);
         
@@ -109,11 +109,11 @@ class MelisMessengerController extends AbstractActionController
     
     /**
      * Function to create new conversation
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function createConversationAction()
     {
-        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
+        $messengerService = $this->getServiceManager()->get('MelisMessengerService');
         $request = $this->getRequest();
         if($request->isPost())
         {
@@ -150,7 +150,7 @@ class MelisMessengerController extends AbstractActionController
     
     /**
      * Function to save the message
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function saveMessageAction()
     {
@@ -158,14 +158,14 @@ class MelisMessengerController extends AbstractActionController
         $data = array();
         $errors = array();
         
-        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
-        $melisMelisCoreConfig = $this->serviceLocator->get('MelisCoreConfig');
-        $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
+        $messengerService = $this->getServiceManager()->get('MelisMessengerService');
+        $melisMelisCoreConfig = $this->getServiceManager()->get('MelisCoreConfig');
+        $melisCoreAuth = $this->getServiceManager()->get('MelisCoreAuth');
         $userAuthDatas =  $melisCoreAuth->getStorage()->read();
         $appConfigForm = $melisMelisCoreConfig->getFormMergedAndOrdered('melismessenger/forms/melismessenger_conversation_form','melismessenger_conversation_form');
         
-        $factory = new \Zend\Form\Factory();
-        $formElements = $this->getServiceLocator()->get('FormElementManager');
+        $factory = new \Laminas\Form\Factory();
+        $formElements = $this->getServiceManager()->get('FormElementManager');
         $factory->setFormElementManager($formElements);
         $propertyForm = $factory->createForm($appConfigForm);
         //get the request
@@ -213,11 +213,11 @@ class MelisMessengerController extends AbstractActionController
     
     /**
      * Function to get the conversation
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function getConversationAction()
     {
-        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
+        $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         $id = (int) $this->params()->fromRoute('id', 0);
         $limit = (int) $this->params()->fromQuery('limit', 10);
         $offset = (int) $this->params()->fromQuery('offset', 0);
@@ -248,11 +248,11 @@ class MelisMessengerController extends AbstractActionController
     
     /**
      * Get message to display in the messenger notifications
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function getNewMessageAction()
     {
-        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
+        $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         $message = $msgService->getNewMessage($this->getCurrentUserId());
         foreach($message AS $key => $val)
         {
@@ -269,7 +269,7 @@ class MelisMessengerController extends AbstractActionController
 
     public function getLastMessageAction()
     {
-        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
+        $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         $message = $msgService->getNewMessage($this->getCurrentUserId());
         foreach($message AS $key => $val)
         {
@@ -284,11 +284,11 @@ class MelisMessengerController extends AbstractActionController
     }
     /**
      * Function to update message status
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function updateMessageStatusAction()
     {
-        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
+        $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         //get the request
         $request = $this->getRequest();
         $post_var = get_object_vars($request->getPost());
@@ -311,7 +311,7 @@ class MelisMessengerController extends AbstractActionController
     
     /**
      * Get all contacts
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function getContactListAction()
     {
@@ -323,7 +323,7 @@ class MelisMessengerController extends AbstractActionController
         $totalContact = 0;
         //get current user id
         $userId  = $this->getCurrentUserId();
-        $msgService =  $this->getServiceLocator()->get('MelisMessengerService');
+        $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         
         $convoIds = $this->prepareConversationId($userId);
         //check if conversation id is not empty
@@ -409,11 +409,11 @@ class MelisMessengerController extends AbstractActionController
     
     /**
      * Function to get the messenger time interval in the config file
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function getMsgTimeIntervalAction()
     {    
-        $config = $this->getServiceLocator()->get('config');
+        $config = $this->getServiceManager()->get('config');
         $msgrConfig = $config['plugins']['melistoolmessenger']['datas']['default']['messenger']['msg_interval'];
         $response = array(
             "interval" => $msgrConfig,
@@ -423,10 +423,10 @@ class MelisMessengerController extends AbstractActionController
 
     /**
      * Function to get the user rights of user to melis messenger
-     * @return \Zend\View\Model\JsonModel
+     * @return \Laminas\View\Model\JsonModel
      */
     public function getUserRightsForMessengerAction(){
-        $messengerService = $this->getServiceLocator()->get('MelisMessengerService');
+        $messengerService = $this->getServiceManager()->get('MelisMessengerService');
         $isAccessible = $messengerService->getUserRightsForMessenger();
         $response = array(
             'isAccessible' => $isAccessible
@@ -444,7 +444,7 @@ class MelisMessengerController extends AbstractActionController
      */
     private function prepareConversationId($userId)
     {
-        $msgService = $this->getServiceLocator()->get('MelisMessengerService');
+        $msgService = $this->getServiceManager()->get('MelisMessengerService');
         $ids = $msgService->prepareConversationId($userId);
 
         $data = array();
@@ -484,7 +484,7 @@ class MelisMessengerController extends AbstractActionController
     private function getCurrentUserId()
     {
         $userId = null;
-        $melisCoreAuth = $this->getServiceLocator()->get('MelisCoreAuth');
+        $melisCoreAuth = $this->getServiceManager()->get('MelisCoreAuth');
         if($melisCoreAuth->hasIdentity())
         {
             $userAuthDatas =  $melisCoreAuth->getStorage()->read();
@@ -495,7 +495,7 @@ class MelisMessengerController extends AbstractActionController
 
     private function getTool()
     {
-        $service = $this->getServiceLocator()->get('MelisCoreTool');
+        $service = $this->getServiceManager()->get('MelisCoreTool');
 
         return $service;
     }

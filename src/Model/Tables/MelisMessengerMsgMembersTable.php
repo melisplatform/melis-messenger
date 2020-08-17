@@ -10,23 +10,30 @@
 namespace MelisMessenger\Model\Tables;
 
 use MelisCore\Model\Tables\MelisGenericTable;
-use Zend\Db\TableGateway\TableGateway;
 
 class MelisMessengerMsgMembersTable extends MelisGenericTable 
 {
-    protected $tableGateway;
-    protected $idField;
-    
-    public function __construct(TableGateway $tableGateway)
+    /**
+     * Table name
+     */
+    const TABLE = 'melis_messenger_msg_members';
+    /**
+     * Primary key
+     */
+    const PRIMARY_KEY = 'msgr_msg_mbr_id';
+
+    /**
+     * MelisCmsNewsTable constructor.
+     */
+    public function __construct()
     {
-        parent::__construct($tableGateway);
-        $this->idField = 'msgr_msg_mbr_id';
+        $this->idField = self::PRIMARY_KEY;
     }
     
     /**
      * Function to get the conversation ID by user ID
      * @param Int $userId
-     * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
+     * @return NULL|\Laminas\Db\ResultSet\ResultSetInterface
      */
     public function getConversationIdByUserId($userId)
     {

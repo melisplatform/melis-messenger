@@ -13,7 +13,7 @@ return array(
                         'method' => 'POST',
                         'action' => '',
                     ),
-                    'hydrator'  => 'Zend\Stdlib\Hydrator\ArraySerializable',
+                    'hydrator'  => 'Laminas\Hydrator\ArraySerializable',
                     'elements' => array(
                         array(
 							'spec' => array(
@@ -71,7 +71,7 @@ return array(
                                     'name' => 'NotEmpty',
                                     'options' => array(
                                         'messages' => array(
-                                            \Zend\Validator\NotEmpty::IS_EMPTY => 'tr_melistoolmesseger_tool_input_empty',
+                                            \Laminas\Validator\NotEmpty::IS_EMPTY => 'tr_melistoolmesseger_tool_input_empty',
                                         ),
                                     ),
                                 ),

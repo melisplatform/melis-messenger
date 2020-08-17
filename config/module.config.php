@@ -84,21 +84,14 @@ return array(
             ),
         ),
     ),
-    'translator' => array(
-        'locale' => 'en_EN',
-    ),
     'service_manager' => array(
         'aliases' => array(
-            'translator' => 'MvcTranslator',
-            'MelisMessengerMsgTable' => 'MelisMessenger\Model\Tables\MelisMessengerMsgTable',
-            'MelisMessengerMsgContentTable' => 'MelisMessenger\Model\Tables\MelisMessengerMsgContentTable',
-            'MelisMessengerMsgMembersTable' => 'MelisMessenger\Model\Tables\MelisMessengerMsgMembersTable',
-        ),
-        'factories' => array(
-            'MelisMessengerService' => 'MelisMessenger\Service\Factory\MelisMessengerServiceFactory',
-            'MelisMessenger\Model\Tables\MelisMessengerMsgTable' => 'MelisMessenger\Model\Tables\Factory\MelisMessengerMsgTableFactory',
-            'MelisMessenger\Model\Tables\MelisMessengerMsgContentTable' => 'MelisMessenger\Model\Tables\Factory\MelisMessengerMsgContentTableFactory',
-            'MelisMessenger\Model\Tables\MelisMessengerMsgMembersTable' => 'MelisMessenger\Model\Tables\Factory\MelisMessengerMsgMembersTableFactory',
+
+            'MelisMessengerService' => \MelisMessenger\Service\MelisMessengerService::class,
+
+            'MelisMessengerMsgTable' => \MelisMessenger\Model\Tables\MelisMessengerMsgTable::class,
+            'MelisMessengerMsgContentTable' => MelisMessenger\Model\Tables\MelisMessengerMsgContentTable::class,
+            'MelisMessengerMsgMembersTable' => MelisMessenger\Model\Tables\MelisMessengerMsgMembersTable::class,
         ),
     ),
     'controllers' => array(

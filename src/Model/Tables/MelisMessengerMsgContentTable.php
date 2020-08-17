@@ -10,26 +10,32 @@
 namespace MelisMessenger\Model\Tables;
 
 use MelisCore\Model\Tables\MelisGenericTable;
-use Zend\Db\TableGateway\TableGateway;
-use Zend\Db\Sql\Expression;
-use Zend\Db\Sql\Select;
+use Laminas\Db\Sql\Expression;
 
 class MelisMessengerMsgContentTable extends MelisGenericTable 
 {
-    protected $tableGateway;
-    protected $idField;
-    
-    public function __construct(TableGateway $tableGateway)
+    /**
+     * Table name
+     */
+    const TABLE = 'melis_messenger_msg_content';
+    /**
+     * Primary key
+     */
+    const PRIMARY_KEY = 'msgr_msg_cont_id';
+
+    /**
+     * MelisCmsNewsTable constructor.
+     */
+    public function __construct()
     {
-        parent::__construct($tableGateway);
-        $this->idField = 'msgr_msg_cont_id';
+        $this->idField = self::PRIMARY_KEY;
     }
     
     /**
      * Function to get new messages for notification
      * 
      * @param unknown $id
-     * @return NULL|\Zend\Db\ResultSet\ResultSetInterface
+     * @return NULL|\Laminas\Db\ResultSet\ResultSetInterface
      */
     public function getNewMessage($id)
     {
