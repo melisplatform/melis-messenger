@@ -21,14 +21,12 @@
     overflow-y: auto;
 }
 
-
 #convo-content #chat-container .my-msg{
 	background: #932e2a;
     border-radius: 17px;
     color: #fff;
     padding: 10px;
 }
-
 
 #convo-content #chat-container .my-msg a{
 	color: #ffffff;
@@ -39,12 +37,10 @@
 	padding: 10px;
 }
 
-
 #convo-content .chat-contact-msg img{
 	max-width: 100%;
 	height: auto;
 }
-
 
 #convo-content .chat-contact-name{
 	position: absolute;
@@ -53,17 +49,14 @@
     color: #932e2a;
 }
 
-
 .widget-chat .media small.author{
 	width:auto !important;
 }
-
 
 #convo-content #convo-msg{
 	text-align:center;
 	padding:20px;
 }
-
 
 #convo-content #convo-header #convo-header-content{
 	padding:20px;
@@ -72,23 +65,19 @@
 	border-bottom:1px solid #ebebeb;
 }
 
-
 #convo-content #load-more-msg{
 	width:100%;
 	text-align:center;
 }
-
 
 #compose-convo{
 	width:100%;
 	margin:auto;
 }
 
-
 #contacts-container{
 	overflow: hidden !important;
 }
-
 
 #contacts-container #contact-header{
 	width:100%;
@@ -97,18 +86,15 @@
 	color:#fff;
 }
 
-
 #contacts-container #contact-list{
 	max-height: 645px;
 	overflow: auto;
 }
 
-
 #contacts-container #contact-list .selectContact{
 	cursor: pointer;
 	display: none;
 }
-
 
 #contacts-container #contact-list .thumb.pull-left{
 	margin-top:-6px;
@@ -116,11 +102,9 @@
 	margin-right: 10px;
 }
 
-
 #contacts-container .select-contacts {
 	margin-top: 10px;
 }
-
 
 #melis-messenger-messages{
 	width: 270px;
@@ -147,12 +131,10 @@
 	margin-right: 15px;
 }
 
-
 #messenger-msg-cont{
 	max-height: 25px;
     overflow: hidden;
 }
-
 
 #messenger-msg-cont #messenger-msg{
 	display: inline-block;
@@ -163,29 +145,24 @@
 	margin-top: -15px;
 }
 
-
 #contact-list #show-empty-contact{
 	text-align: center;
 }
 
-
 #contact-list #messenger-msg-cont #messenger-msg{
 	margin-top: 0px !important;
 }
-
 
 #contact-list #messenger-msg-cont #messenger-msg blockquote,
 #contact-list #messenger-msg-cont #messenger-msg pre{
 	margin-top: -9px !important;
 }
 
-
 #messenger-msg-cont span#messenger-msg img{
 	width: 20px !important;
 	height: 20px !important;
 	border-radius: 100%;
 }
-
 
 .glyphicons.comments.cs-fa i:before {
     font-family: "Fontawesome";
@@ -200,6 +177,21 @@
 .msg-chat-no-padding [class^="col-"] { /* Elements whose class attribute contains the substring "col-" */
 	padding-left: 0;
 	padding-right: 0;
+}
+
+.tokenize-dropdown.dropdown .dropdown-menu {
+	padding: 0;
+}
+
+.tokenize-dropdown.dropdown .dropdown-menu .dropdown-item.active, 
+.tokenize-dropdown.dropdown .dropdown-menu .dropdown-item:active,
+.list-group-item.active {
+	background-color: #e61c23;
+	border-color: #e61c23;
+}
+
+.tokenize-dropdown.dropdown .dropdown-menu > li {
+	height: 40px !important;
 }
 
 /* changes by: Junry prior to bootstrap 4 jquery 3 */
@@ -229,14 +221,15 @@
 	text-align: left;
 }
 
-
+.selectContact .media-msgrBody .text-danger {
+	color: #72af46 !important;
+}
 
 @media only screen and (min-width: 992px) and (max-width: 1122px) {
 	#sendMsgForm #btn-send-message{
 		height: 209px !important;
 	}
 }
-
 @media only screen and (max-width: 767px) {
 	#sendMsgForm #btn-send-message{
 		height: 50px !important;
@@ -249,7 +242,6 @@
 		margin-top: 1rem;
 	}
 }
-
 @media only screen and (min-width: 992px) and (max-width: 1375px) {
 	#compose-convo{
 		font-size: 0px;
