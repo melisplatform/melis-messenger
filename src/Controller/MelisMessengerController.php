@@ -118,7 +118,7 @@ class MelisMessengerController extends MelisAbstractActionController
         if($request->isPost())
         {
             $mbrIds = "";
-            $postValues = get_object_vars($request->getPost());
+            $postValues = $request->getPost()->toArray();
             $postValues['msgr_msg_creator_id'] = $this->getCurrentUserId();
             $postValues['msgr_msg_date_created'] = date('Y/m/d H:i:s');
             //get the selected contact / member of the conversation ids
@@ -174,8 +174,7 @@ class MelisMessengerController extends MelisAbstractActionController
         if($request->isPost())
         {
             //get and sanitize the data
-//            $postValues = $this->getTool()->sanitizeRecursive(get_object_vars($request->getPost()), array(), false, false);
-            $postValues = get_object_vars($request->getPost());
+            $postValues = $request->getPost()->toArray();
 
             //assign the data to the form
             $propertyForm->setData($postValues);
@@ -291,7 +290,7 @@ class MelisMessengerController extends MelisAbstractActionController
         $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         //get the request
         $request = $this->getRequest();
-        $post_var = get_object_vars($request->getPost());
+        $post_var = $request->getPost()->toArray();
         $user_id = $this->getCurrentUserId();
         $res = "";
         //check if request is post
