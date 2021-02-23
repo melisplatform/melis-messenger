@@ -31,7 +31,7 @@ var messengerTool = (function(window){
             //check if messenger already open
             if ( $('#id_melismessenger_tool').not(':visible') ) {
                 setTimeout(function(){
-                    if (getChatContainer().find('.media').length != 0) {
+                    if ( getChatContainer().find('.media').length != 0 ) {
                         getChatContainer().scrollTop(getChatContainer()[0].scrollHeight);
                         msgrDetectScroll = true;
                     }
