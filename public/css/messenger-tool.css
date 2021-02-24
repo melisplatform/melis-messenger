@@ -22,7 +22,7 @@
 }
 
 #convo-content #chat-container .my-msg{
-	background: #932e2a;
+	background: #e61c23;
     border-radius: 17px;
     color: #fff;
     padding: 10px;
@@ -46,7 +46,7 @@
 	position: absolute;
     left: 75px;
     top: 35px;
-    color: #932e2a;
+    color: #e61c23;
 }
 
 .widget-chat .media small.author{
