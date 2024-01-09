@@ -9,6 +9,7 @@
 
 namespace MelisMessenger\Controller;
 
+use Laminas\Session\Container;
 use MelisCore\Controller\MelisAbstractActionController;
 use MelisCore\Service\MelisCoreRightsService;
 use Laminas\View\Model\ViewModel;
@@ -163,7 +164,11 @@ class MelisMessengerController extends MelisAbstractActionController
         $melisCoreAuth = $this->getServiceManager()->get('MelisCoreAuth');
         $userAuthDatas =  $melisCoreAuth->getStorage()->read();
         $appConfigForm = $melisMelisCoreConfig->getFormMergedAndOrdered('melismessenger/forms/melismessenger_conversation_form','melismessenger_conversation_form');
-        
+
+        $container = new Container('meliscore');
+        $locale = $container['melis-lang-locale'];
+        $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::LONG, \IntlDateFormatter::MEDIUM);
+
         $factory = new \Laminas\Form\Factory();
         $formElements = $this->getServiceManager()->get('FormElementManager');
         $factory->setFormElementManager($formElements);
@@ -191,7 +196,7 @@ class MelisMessengerController extends MelisAbstractActionController
                 //check if saving is success
                 if($res)
                 {
-                    $postValues['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($postValues['msgr_msg_cont_date']));
+                    $postValues['msgr_msg_cont_date'] = $formatter->format(strtotime($postValues['msgr_msg_cont_date']));
                     $success = true;
                     $data = $postValues;//we need to return the data that we pass so that we can display it directly to the conversation
                     $data['usr_image'] = $this->getUserImage($userAuthDatas->usr_image);
@@ -222,7 +227,11 @@ class MelisMessengerController extends MelisAbstractActionController
         $offset = (int) $this->params()->fromQuery('offset', 0);
         //get the convo list
         $totalMessages = count($msgService->getConversation($id));
-        
+
+        $container = new Container('meliscore');
+        $locale = $container['melis-lang-locale'];
+        $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::LONG, \IntlDateFormatter::MEDIUM);
+
         $convo = $msgService->getConversationWithLimit($id, $limit, $offset);
 
         if($offset == 0)
@@ -232,7 +241,7 @@ class MelisMessengerController extends MelisAbstractActionController
             //check if user image is not empty and convert it to base_64, else just return the default image
             $convo[$key]['usr_image'] = $this->getUserImage($convo[$key]['usr_image']);
             
-            $convo[$key]['msgr_msg_cont_date'] = date('M d, Y g:i:s A', strtotime($convo[$key]['msgr_msg_cont_date']));
+            $convo[$key]['msgr_msg_cont_date'] = $formatter->format(strtotime($convo[$key]['msgr_msg_cont_date']));
 //            $convo[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($convo[$key]['msgr_msg_cont_message']);
         }
         
