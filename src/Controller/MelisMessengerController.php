@@ -165,7 +165,10 @@ class MelisMessengerController extends MelisAbstractActionController
         $userAuthDatas =  $melisCoreAuth->getStorage()->read();
         $appConfigForm = $melisMelisCoreConfig->getFormMergedAndOrdered('melismessenger/forms/melismessenger_conversation_form','melismessenger_conversation_form');
 
-        $formatter = $this->formatter();
+        $melisTool = $this->getServiceManager()->get('MelisCoreTool');
+        $translator = $this->getServiceManager()->get('translator');
+        $at = $translator->translate('tr_melismessenger_tool_common_at');
+        $pattern = "d MMMM Y '$at' hh:mm a";
 
         $factory = new \Laminas\Form\Factory();
         $formElements = $this->getServiceManager()->get('FormElementManager');
@@ -194,7 +197,7 @@ class MelisMessengerController extends MelisAbstractActionController
                 //check if saving is success
                 if($res)
                 {
-                    $postValues['msgr_msg_cont_date'] = $formatter->format(strtotime($postValues['msgr_msg_cont_date']));
+                    $postValues['msgr_msg_cont_date'] = $melisTool->formatDate(strtotime($postValues['msgr_msg_cont_date']), null, null, null, null, $pattern);
                     $success = true;
                     $data = $postValues;//we need to return the data that we pass so that we can display it directly to the conversation
                     $data['usr_image'] = $this->getUserImage($userAuthDatas->usr_image);
@@ -226,7 +229,10 @@ class MelisMessengerController extends MelisAbstractActionController
         //get the convo list
         $totalMessages = count($msgService->getConversation($id));
 
-        $formatter = $this->formatter();
+        $melisTool = $this->getServiceManager()->get('MelisCoreTool');
+        $translator = $this->getServiceManager()->get('translator');
+        $at = $translator->translate('tr_melismessenger_tool_common_at');
+        $pattern = "d MMMM Y '$at' hh:mm a";
 
         $convo = $msgService->getConversationWithLimit($id, $limit, $offset);
 
@@ -237,7 +243,7 @@ class MelisMessengerController extends MelisAbstractActionController
             //check if user image is not empty and convert it to base_64, else just return the default image
             $convo[$key]['usr_image'] = $this->getUserImage($convo[$key]['usr_image']);
             
-            $convo[$key]['msgr_msg_cont_date'] = $formatter->format(strtotime($convo[$key]['msgr_msg_cont_date']));
+            $convo[$key]['msgr_msg_cont_date'] = $melisTool->formatDate(strtotime($convo[$key]['msgr_msg_cont_date']), null, null, null, null, $pattern);
 //            $convo[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($convo[$key]['msgr_msg_cont_message']);
         }
         
@@ -503,16 +509,4 @@ class MelisMessengerController extends MelisAbstractActionController
 
         return $service;
     }
-
-    private function formatter()
-    {
-        $translator = $this->getServiceManager()->get('translator');
-        $at = $translator->translate('tr_melismessenger_tool_common_at');
-        $pattern = "d MMMM Y '$at' hh:mm a";
-
-        $container = new Container('meliscore');
-        $locale = $container['melis-lang-locale'];
-        return new \IntlDateFormatter($locale, \IntlDateFormatter::LONG, \IntlDateFormatter::MEDIUM, null, null, $pattern);
-    }
-
 }
