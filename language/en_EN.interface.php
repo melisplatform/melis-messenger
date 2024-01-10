@@ -16,4 +16,5 @@
         'tr_melismessenger_tool_no_message_notification'                => 'You don\'t have any message at this moment',
         'tr_melismessenger_tool_image_note'                             => 'Note: Images uploaded through the Media Library are accessible to all users',
         'tr_melismessenger_tool_user_is_deleted'                        => 'This user has been deleted.',
+        'tr_melismessenger_tool_common_at'                              => 'at',
     );

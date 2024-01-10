@@ -165,9 +165,7 @@ class MelisMessengerController extends MelisAbstractActionController
         $userAuthDatas =  $melisCoreAuth->getStorage()->read();
         $appConfigForm = $melisMelisCoreConfig->getFormMergedAndOrdered('melismessenger/forms/melismessenger_conversation_form','melismessenger_conversation_form');
 
-        $container = new Container('meliscore');
-        $locale = $container['melis-lang-locale'];
-        $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::LONG, \IntlDateFormatter::MEDIUM);
+        $formatter = $this->formatter();
 
         $factory = new \Laminas\Form\Factory();
         $formElements = $this->getServiceManager()->get('FormElementManager');
@@ -228,9 +226,7 @@ class MelisMessengerController extends MelisAbstractActionController
         //get the convo list
         $totalMessages = count($msgService->getConversation($id));
 
-        $container = new Container('meliscore');
-        $locale = $container['melis-lang-locale'];
-        $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::LONG, \IntlDateFormatter::MEDIUM);
+        $formatter = $this->formatter();
 
         $convo = $msgService->getConversationWithLimit($id, $limit, $offset);
 
@@ -508,5 +504,15 @@ class MelisMessengerController extends MelisAbstractActionController
         return $service;
     }
 
+    private function formatter()
+    {
+        $translator = $this->getServiceManager()->get('translator');
+        $at = $translator->translate('tr_melismessenger_tool_common_at');
+        $pattern = "d MMMM Y '$at' hh:mm a";
+
+        $container = new Container('meliscore');
+        $locale = $container['melis-lang-locale'];
+        return new \IntlDateFormatter($locale, \IntlDateFormatter::LONG, \IntlDateFormatter::MEDIUM, null, null, $pattern);
+    }
 
 }
