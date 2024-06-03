@@ -142,7 +142,7 @@
     white-space: nowrap;
     overflow: hidden !important;
     text-overflow: ellipsis;
-	margin-top: -15px;
+	/* margin-top: -15px; */
 }
 
 #contact-list #show-empty-contact{
