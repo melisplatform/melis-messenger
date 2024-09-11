@@ -251,3 +251,7 @@
 		font-size: 15px;
 	}
 }
+/* jQuery migration */
+#id_melismessenger_tool_contact .thumb {
+	top: auto;
+}
