@@ -528,8 +528,8 @@ var messengerTool = (function(window){
             $.get('/melis/MelisMessenger/MelisMessenger/getNewMessage', function(data){
                 var ctr         = 0, //count all message
                     tempData    = '';
-
-                    if ( data.messages.length >  0 ) {
+                    
+                    if ( data.messages !== undefined && data.messages.length >  0 ) {
                         msgrBody.find("#melis-messenger-messages").removeClass("empty-notif");
                         msgrBody.find("#melis-messenger-messages").prev().find(".badge").removeClass("hidden");
 

@@ -142,7 +142,7 @@
     white-space: nowrap;
     overflow: hidden !important;
     text-overflow: ellipsis;
-	margin-top: -15px;
+	/* margin-top: -15px; */
 }
 
 #contact-list #show-empty-contact{
@@ -250,4 +250,8 @@
 	#compose-convo i {
 		font-size: 15px;
 	}
+}
+/* jQuery migration */
+#id_melismessenger_tool_contact .thumb {
+	top: auto;
 }
