@@ -280,7 +280,7 @@ var messengerTool = (function(window){
             if ( $('#melis-messenger-messages li').hasClass('empty-notif-li') ) {
                 if ( $(window).width() < 768 ) {
                     //toggle the menu on mobile
-                    $("#id_meliscore_leftmenu").removeAttr('style');
+                    $("#id_meliscore_leftmenu").prop('style', null);
                     $("#id_meliscore_footer").removeClass('slide-left');
 
                     $("#newplugin-cont").toggleClass("show-menu");
@@ -303,7 +303,7 @@ var messengerTool = (function(window){
 
             if( $(window).width() < 768 ) {
                 //toggle the menu on mobile
-                $("#id_meliscore_leftmenu").removeAttr('style');
+                $("#id_meliscore_leftmenu").prop('style', null);
                 $("#id_meliscore_footer").removeClass('slide-left');
 
                 $("#newplugin-cont").toggleClass("show-menu");
@@ -556,7 +556,7 @@ var messengerTool = (function(window){
                                 $("#melis-messenger-messages").slideToggle();
                                 setTimeout(function () {
                                     //after 3 seconds, we hide the message notification area
-                                    $("#melis-messenger-messages").removeAttr('style');
+                                    $("#melis-messenger-messages").prop('style', null);
                                 }, 3000);
                             }
                         }
