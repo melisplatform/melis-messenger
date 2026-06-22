@@ -31,26 +31,81 @@ async function fetchNewCount(): Promise<number> {
   }
 }
 
+const MESSENGER_PANE_ID = MESSENGER_TAB_HREF.slice(1) // 'id_melismessenger_tool'
+
 /**
- * After the profile iframe is up, switch it to the Messenger tab. We KEEP retrying (re-clicking the
- * tab link) until the tab is actually active: the profile finishes loading async and activates its
- * default (first) tab, so a single early click is lost — re-clicking until active wins the race.
+ * After the profile iframe is up, switch it to the Messenger tab — EXCLUSIVELY. We don't just click
+ * the tab link: the profile finishes loading async and activates its default (first) tab, racing
+ * with us and leaving BOTH panes active (stacked). So we drive the iframe DOM directly: clear every
+ * pane/nav-item in the group, then set the Messenger pane/link active — and re-apply for a short
+ * window to win the race against the profile's late auto-activation. One click() triggers the
+ * legacy lazy content-load. After the window we stop, so the user can switch tabs freely.
  */
 function activateMessengerTab() {
+  let tries = 0
+  let streak = 0
+  const iv = window.setInterval(() => {
+    tries++
+    const frame = document.querySelector(`iframe[title="${PROFILE_FRAME_TITLE}"]`) as HTMLIFrameElement | null
+    let win: (Window & { messengerTool?: { openMessengerTab?: () => void } }) | null = null
+    let doc: Document | null = null
+    try { win = (frame?.contentWindow as never) ?? null; doc = frame?.contentDocument ?? null } catch { win = null; doc = null }
+    const tc = doc?.querySelector('.user-profile-tab-content .tab-content') as HTMLElement | null
+    const link = doc?.querySelector(`a[href="${MESSENGER_TAB_HREF}"]`) as HTMLElement | null
+    const pane = doc?.getElementById(MESSENGER_PANE_ID)
+    // Tabs not rendered yet — wait (the profile root can be visible before its tab widget loads,
+    // which is why an early single call missed; keep polling until the tab + pane exist).
+    if (!tc || !link || !pane) { if (tries > 60) window.clearInterval(iv); return }
+
+    const others = Array.from(tc.children).filter(
+      (c) => c.classList.contains('tab-pane') && c.id !== MESSENGER_PANE_ID && c.classList.contains('active'),
+    )
+    if (pane.classList.contains('active') && others.length === 0) {
+      // Messenger tab is exclusively active. Hold a few ticks (to beat the profile's late
+      // auto-activation), then stop so the user can switch tabs freely.
+      if (++streak > 4) window.clearInterval(iv)
+      return
+    }
+    streak = 0
+    // Not (yet) on Messenger — assert it. Prefer the module's own flow (switches tab + lazy-loads
+    // content, like the legacy header icon); fall back to a direct DOM switch if the fn isn't there.
+    if (win?.messengerTool?.openMessengerTab) {
+      try { win.messengerTool.openMessengerTab() } catch { /* retry next tick */ }
+    } else {
+      tc.querySelectorAll(':scope > .tab-pane').forEach((p) => p.classList.remove('active', 'show'))
+      pane.classList.add('active', 'show')
+      const li = link.closest('li')
+      li?.parentElement?.querySelectorAll('li, a').forEach((e) => e.classList.remove('active'))
+      link.classList.add('active')
+      li?.classList.add('active')
+    }
+    if (tries > 60) window.clearInterval(iv) // give up after ~18s
+  }, 300)
+}
+
+/**
+ * Ensure the messenger contact UI is usable. The tab's init (initTokenizePlugin + getContactList,
+ * the `#selectUsers` user picker that the "+" button needs) is gated on the async user-rights call
+ * (getUserRights); buildToolPage runs the zone jscallback ONCE at load, often BEFORE the rights
+ * come back, so the tokenize2 picker never initialises and "+" stays inert. Re-run loadContact
+ * (a no-op until rights are in) until the picker is up. Idempotent: we stop as soon as tokenize2
+ * has wrapped the select (a `.tokenize` widget appears).
+ */
+function ensureMessengerReady() {
   let tries = 0
   const iv = window.setInterval(() => {
     tries++
     const frame = document.querySelector(`iframe[title="${PROFILE_FRAME_TITLE}"]`) as HTMLIFrameElement | null
+    let win: (Window & { messengerTool?: { loadContact?: () => void } }) | null = null
     let doc: Document | null = null
-    try { doc = frame?.contentDocument ?? null } catch { doc = null }
-    if (doc) {
-      const link = doc.querySelector(`a[href="${MESSENGER_TAB_HREF}"]`) as HTMLElement | null
-      const li = link?.closest('li')
-      if (li?.classList.contains('active')) { window.clearInterval(iv); return } // done
-      if (link) link.click()
-    }
-    if (tries > 50) window.clearInterval(iv) // give up after ~20s
-  }, 400)
+    try { win = (frame?.contentWindow as never) ?? null; doc = frame?.contentDocument ?? null } catch { win = null; doc = null }
+    const select = doc?.getElementById('selectUsers')
+    if (!doc || !select) { if (tries > 60) window.clearInterval(iv); return }
+    const ready = !!doc.querySelector('.select-contacts .tokenize') || getComputedStyle(select).display === 'none'
+    if (ready) { window.clearInterval(iv); return } // picker initialised → "+" works
+    try { win?.messengerTool?.loadContact?.() } catch { /* retry next tick */ }
+    if (tries > 60) window.clearInterval(iv) // give up after ~30s
+  }, 500)
 }
 
 export default function MessengerHeader() {
@@ -67,10 +122,19 @@ export default function MessengerHeader() {
   }, [])
 
   function open() {
-    const w = window as unknown as { __melisOpenTab?: (t: { id: string; label: string; path: string }) => void }
-    w.__melisOpenTab?.({ id: ACCOUNT_ROUTE, label: 'Messenger', path: ACCOUNT_ROUTE })
-    navigate(ACCOUNT_ROUTE) // openTab registers the tab; navigation actually renders the profile zone
+    const w = window as unknown as {
+      __melisOpenAccount?: () => void
+      __melisOpenTab?: (t: { id: string; label: string; path: string }) => void
+    }
+    // Prefer the host opener so the tab gets the profile's own (translated) label "Mon compte".
+    if (typeof w.__melisOpenAccount === 'function') {
+      w.__melisOpenAccount()
+    } else {
+      w.__melisOpenTab?.({ id: ACCOUNT_ROUTE, label: 'Mon compte', path: ACCOUNT_ROUTE })
+      navigate(ACCOUNT_ROUTE)
+    }
     activateMessengerTab()
+    ensureMessengerReady()
     // Refresh the badge shortly after opening (messages get marked read in the tool).
     window.setTimeout(() => { fetchNewCount().then(setCount) }, 4000)
   }
