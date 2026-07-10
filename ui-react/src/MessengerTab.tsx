@@ -12,7 +12,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  */
 
 const H = { 'X-Requested-With': 'XMLHttpRequest' } as const
-const URL_CONTACTS = '/melis/MelisMessenger/MelisMessenger/getContactList'
+// Liste triée par date du dernier message (récent en haut) — endpoint React-only (le legacy
+// getContactList re-trie alphabétiquement et n'est pas modifié).
+const URL_CONTACTS = '/melis/MelisMessenger/MelisMessenger/getContactListByDate'
 const URL_CONVO    = '/melis/MelisMessenger/MelisMessenger/getConversation'
 const URL_SEND     = '/melis/MelisMessenger/MelisMessenger/saveMessage'
 const URL_INTERVAL = '/melis/MelisMessenger/MelisMessenger/getMsgTimeInterval'
@@ -23,6 +25,7 @@ interface ContactRow {
   msgr_msg_id: number
   contact_id: number
   usrInfo: { name: string; isOnline: number; image: string; message: string }[]
+  date?: string // date du dernier message (tri serveur, non affiché)
 }
 interface Message {
   msgr_msg_cont_id: number
@@ -36,8 +39,8 @@ interface Message {
 interface UserRow { id: number; name: string; login: string; image: string; isOnline: number }
 
 const T = {
-  fr: { contacts: 'Contacts', chat: 'Conversation', empty: 'Sélectionnez un contact pour afficher la conversation.', noContacts: 'Aucun contact.', placeholder: 'Écrivez un message…', send: 'Envoyer', online: 'En ligne', offline: 'Hors ligne', newConvo: 'Nouvelle conversation', searchUser: 'Rechercher un utilisateur…', noUser: 'Aucun utilisateur trouvé.', back: 'Retour' },
-  en: { contacts: 'Contacts', chat: 'Chat', empty: 'Please select a contact to display the conversation.', noContacts: 'No contact.', placeholder: 'Write a message…', send: 'Send', online: 'Online', offline: 'Offline', newConvo: 'New conversation', searchUser: 'Search a user…', noUser: 'No user found.', back: 'Back' },
+  fr: { contacts: 'Contacts', chat: 'Conversation', empty: 'Sélectionnez un contact pour afficher la conversation.', noContacts: 'Aucun contact.', placeholder: 'Écrivez un message…', send: 'Envoyer', online: 'En ligne', offline: 'Hors ligne', newConvo: 'Nouvelle conversation', searchUser: 'Rechercher un utilisateur…', noUser: 'Aucun utilisateur trouvé.', back: 'Retour', typeToSearch: 'Tapez pour rechercher un utilisateur.' },
+  en: { contacts: 'Contacts', chat: 'Chat', empty: 'Please select a contact to display the conversation.', noContacts: 'No contact.', placeholder: 'Write a message…', send: 'Send', online: 'Online', offline: 'Offline', newConvo: 'New conversation', searchUser: 'Search a user…', noUser: 'No user found.', back: 'Back', typeToSearch: 'Type to search for a user.' },
 }
 function lang(): 'fr' | 'en' {
   const l = (typeof document !== 'undefined' ? document.documentElement.lang : 'en') || 'en'
@@ -100,11 +103,23 @@ export default function MessengerTab() {
     loadConvo(c.msgr_msg_id)
   }
 
-  async function openNewConvoPanel() {
-    setNewOpen(true); setQuery('')
-    const d = await getJson<{ data: UserRow[] }>(URL_USERS)
-    if (d?.data) setUsers(d.data)
+  function openNewConvoPanel() {
+    // On n'affiche AUCUN utilisateur tant qu'on n'a pas tapé (la liste peut être très longue).
+    setNewOpen(true); setQuery(''); setUsers([])
   }
+
+  // Recherche serveur débouncée : ne cherche qu'à partir d'un terme, sinon vide la liste.
+  useEffect(() => {
+    if (!newOpen) return
+    const q = query.trim()
+    if (q === '') { setUsers([]); return }
+    let alive = true
+    const id = window.setTimeout(async () => {
+      const d = await getJson<{ data: UserRow[] }>(`${URL_USERS}?search=${encodeURIComponent(q)}`)
+      if (alive && d?.data) setUsers(d.data)
+    }, 250)
+    return () => { alive = false; window.clearTimeout(id) }
+  }, [query, newOpen])
 
   // Démarre (ou rouvre) une conversation avec l'utilisateur choisi.
   async function startConversation(u: UserRow) {
@@ -162,23 +177,23 @@ export default function MessengerTab() {
           <div style={S.contactsList}>
             <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)}
               placeholder={t.searchUser} style={{ ...S.input, width: '100%', margin: '2px 0 8px' }} />
-            {users.filter((u) => (u.name + ' ' + u.login).toLowerCase().includes(query.trim().toLowerCase())).length === 0 && (
-              <div style={S.muted}>{t.noUser}</div>
-            )}
-            {users
-              .filter((u) => (u.name + ' ' + u.login).toLowerCase().includes(query.trim().toLowerCase()))
-              .map((u) => (
-                <button key={u.id} type="button" disabled={starting} onClick={() => startConversation(u)} style={S.contactRow}>
-                  <div style={S.avatarWrap}>
-                    <img src={u.image} alt="" style={S.avatar} />
-                    <span style={{ ...S.dot, background: u.isOnline ? '#22c55e' : '#9ca3af' }} />
-                  </div>
-                  <div style={{ minWidth: 0, textAlign: 'left' }}>
-                    <div style={S.contactName}>{u.name}</div>
-                    <div style={S.contactMsg}>{u.login}</div>
-                  </div>
-                </button>
-              ))}
+            {/* Rien tant qu'on n'a pas tapé ; sinon les résultats serveur (déjà filtrés + limités). */}
+            {query.trim() === ''
+              ? <div style={S.muted}>{t.typeToSearch}</div>
+              : users.length === 0
+                ? <div style={S.muted}>{t.noUser}</div>
+                : users.map((u) => (
+                    <button key={u.id} type="button" disabled={starting} onClick={() => startConversation(u)} style={S.contactRow}>
+                      <div style={S.avatarWrap}>
+                        <img src={u.image} alt="" style={S.avatar} />
+                        <span style={{ ...S.dot, background: u.isOnline ? '#22c55e' : '#9ca3af' }} />
+                      </div>
+                      <div style={{ minWidth: 0, textAlign: 'left' }}>
+                        <div style={S.contactName}>{u.name}</div>
+                        <div style={S.contactMsg}>{u.login}</div>
+                      </div>
+                    </button>
+                  ))}
           </div>
         ) : (
           <div style={S.contactsList}>

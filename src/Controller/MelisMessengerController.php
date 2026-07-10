@@ -410,30 +410,89 @@ class MelisMessengerController extends MelisAbstractActionController
     }
 
     /**
-     * Liste JSON des utilisateurs (hors soi-même) pour DÉMARRER une nouvelle conversation.
-     * Utilisé par le sélecteur de contact « + » de l'onglet Messenger React (équivalent JSON de
-     * renderMessengerContactAction, qui ne rend que du HTML). N'altère aucun comportement existant.
+     * RECHERCHE JSON d'utilisateurs (hors soi-même) pour DÉMARRER une nouvelle conversation.
+     * Utilisé par le sélecteur « + » de l'onglet Messenger React. La liste des utilisateurs pouvant
+     * être TRÈS longue, on ne renvoie RIEN sans terme de recherche, et on filtre côté SQL (LIKE nom /
+     * prénom / login) avec une LIMITE. N'altère aucun comportement existant.
      * @return \Laminas\View\Model\JsonModel
      */
     public function getUserListForConversationAction()
     {
-        $users = $this->getServiceManager()->get('MelisCoreTableUser');
-        $usersList = $users->fetchAll()->toArray();
-        $me = $this->getCurrentUserId();
+        $search = trim((string) $this->params()->fromQuery('search', ''));
+        // Pas de recherche → pas de liste (on n'affiche jamais tous les utilisateurs).
+        if ($search === '') {
+            return new JsonModel(array('data' => array()));
+        }
+
+        $me   = (int) $this->getCurrentUserId();
+        $like = '%' . $search . '%';
+        $db   = $this->getServiceManager()->get('Laminas\Db\Adapter\AdapterInterface');
+        $rows = $db->query(
+            "SELECT usr_id, usr_firstname, usr_lastname, usr_login, usr_image, usr_is_online
+             FROM melis_core_user
+             WHERE usr_id <> ?
+               AND (usr_firstname LIKE ? OR usr_lastname LIKE ? OR usr_login LIKE ?
+                    OR CONCAT(usr_firstname, ' ', usr_lastname) LIKE ?)
+             ORDER BY usr_firstname, usr_lastname
+             LIMIT 20",
+            array($me, $like, $like, $like, $like)
+        );
+
         $data = array();
-        foreach($usersList AS $u)
-        {
-            if((int) $u['usr_id'] === (int) $me) continue;
+        foreach ($rows as $u) {
+            $u = (array) $u;
             $data[] = array(
                 'id'       => (int) $u['usr_id'],
-                'name'     => trim($u['usr_firstname'].' '.$u['usr_lastname']),
+                'name'     => trim($u['usr_firstname'] . ' ' . $u['usr_lastname']),
                 'login'    => $u['usr_login'],
                 'image'    => $this->getUserImage($u['usr_image']),
                 'isOnline' => (int) ($u['usr_is_online'] ?? 0),
             );
         }
-        usort($data, function($a, $b){ return strcasecmp($a['name'], $b['name']); });
         return new JsonModel(array('data' => $data));
+    }
+
+    /**
+     * Liste JSON des contacts (conversations existantes) TRIÉE par date du DERNIER message (récent en
+     * haut) — pour l'onglet Messenger React. Le legacy getContactListAction re-trie alphabétiquement ;
+     * on ne le modifie PAS. On réutilise le même service (getContactList, déjà ordonné
+     * msgr_msg_cont_date DESC par la requête getContact) mais SANS le re-tri alpha, et on expose la date.
+     * @return \Laminas\View\Model\JsonModel
+     */
+    public function getContactListByDateAction()
+    {
+        $userId     = $this->getCurrentUserId();
+        $msgService = $this->getServiceManager()->get('MelisMessengerService');
+        $convoIds   = $this->prepareConversationId($userId);
+
+        $arr = array();
+        $total = 0;
+        if (!empty($convoIds)) {
+            // Déjà trié msgr_msg_cont_date DESC (1 ligne par conversation via GROUP BY msgr_msg_id).
+            $contactList = $msgService->getContactList($convoIds, $userId);
+            $total = count($contactList);
+            foreach ($contactList as $contact) {
+                if ((int) $userId === (int) $contact['usr_id']) continue;
+                $msgId = $contact['msgr_msg_id'];
+                if (array_key_exists($msgId, $arr)) continue;
+                $arr[$msgId] = array(
+                    'usrInfo' => array(array(
+                        'name'     => trim($contact['usr_firstname'] . ' ' . $contact['usr_lastname']),
+                        'isOnline' => $contact['usr_is_online'],
+                        'image'    => $this->getUserImage($contact['usr_image']),
+                        'message'  => $contact['msgr_msg_cont_message'],
+                    )),
+                    'msgr_msg_id' => $msgId,
+                    'contact_id'  => $contact['usr_id'],
+                    'date'        => $contact['msgr_msg_cont_date'],
+                );
+            }
+        }
+        $data = array_values($arr);
+        // Filet de sécurité : tri décroissant sur la date brute (format SQL, comparable en chaîne).
+        usort($data, function ($a, $b) { return strcmp((string) $b['date'], (string) $a['date']); });
+
+        return new JsonModel(array('data' => $data, 'totalContact' => $total));
     }
 
     private function mergeArray($array1, $array2){
