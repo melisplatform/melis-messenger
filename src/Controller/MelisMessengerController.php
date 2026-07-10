@@ -409,6 +409,33 @@ class MelisMessengerController extends MelisAbstractActionController
         return new JsonModel($response);
     }
 
+    /**
+     * Liste JSON des utilisateurs (hors soi-même) pour DÉMARRER une nouvelle conversation.
+     * Utilisé par le sélecteur de contact « + » de l'onglet Messenger React (équivalent JSON de
+     * renderMessengerContactAction, qui ne rend que du HTML). N'altère aucun comportement existant.
+     * @return \Laminas\View\Model\JsonModel
+     */
+    public function getUserListForConversationAction()
+    {
+        $users = $this->getServiceManager()->get('MelisCoreTableUser');
+        $usersList = $users->fetchAll()->toArray();
+        $me = $this->getCurrentUserId();
+        $data = array();
+        foreach($usersList AS $u)
+        {
+            if((int) $u['usr_id'] === (int) $me) continue;
+            $data[] = array(
+                'id'       => (int) $u['usr_id'],
+                'name'     => trim($u['usr_firstname'].' '.$u['usr_lastname']),
+                'login'    => $u['usr_login'],
+                'image'    => $this->getUserImage($u['usr_image']),
+                'isOnline' => (int) ($u['usr_is_online'] ?? 0),
+            );
+        }
+        usort($data, function($a, $b){ return strcasecmp($a['name'], $b['name']); });
+        return new JsonModel(array('data' => $data));
+    }
+
     private function mergeArray($array1, $array2){
         if(!empty($array2))
             foreach($array2 as $arr2){

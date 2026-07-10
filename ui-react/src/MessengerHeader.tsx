@@ -125,7 +125,13 @@ export default function MessengerHeader() {
     const w = window as unknown as {
       __melisOpenAccount?: () => void
       __melisOpenTab?: (t: { id: string; label: string; path: string }) => void
+      __melisAccountActiveTab?: string
     }
+    // « Mon compte » est désormais NATIF (React) et l'onglet Messenger est natif aussi : on
+    // présélectionne l'onglet via un global + un événement (AccountPage les lit), au lieu de piloter
+    // l'iframe legacy. (activateMessengerTab/ensureMessengerReady ne servent plus que pour la vue « Old ».)
+    w.__melisAccountActiveTab = 'messenger'
+    window.dispatchEvent(new CustomEvent('melis-account-open-tab', { detail: 'messenger' }))
     // Prefer the host opener so the tab gets the profile's own (translated) label "Mon compte".
     if (typeof w.__melisOpenAccount === 'function') {
       w.__melisOpenAccount()
@@ -133,8 +139,6 @@ export default function MessengerHeader() {
       w.__melisOpenTab?.({ id: ACCOUNT_ROUTE, label: 'Mon compte', path: ACCOUNT_ROUTE })
       navigate(ACCOUNT_ROUTE)
     }
-    activateMessengerTab()
-    ensureMessengerReady()
     // Refresh the badge shortly after opening (messages get marked read in the tool).
     window.setTimeout(() => { fetchNewCount().then(setCount) }, 4000)
   }
