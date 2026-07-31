@@ -20,6 +20,12 @@ const URL_SEND     = '/melis/MelisMessenger/MelisMessenger/saveMessage'
 const URL_INTERVAL = '/melis/MelisMessenger/MelisMessenger/getMsgTimeInterval'
 const URL_USERS    = '/melis/MelisMessenger/MelisMessenger/getUserListForConversation'
 const URL_CREATE   = '/melis/MelisMessenger/MelisMessenger/createConversation'
+// Marque LUE toute la conversation ouverte (statut 0 pour les messages des autres) — même endpoint
+// que le tool legacy (messenger-tool.js), qui l'appelle à l'ouverture d'une conversation.
+const URL_STATUS   = '/melis/MelisMessenger/MelisMessenger/updateMessageStatus'
+
+/** Événement local : le compteur de non-lus a changé → la cloche du topbar se rafraîchit. */
+export const UNREAD_EVENT = 'melis-messenger-unread-changed'
 
 interface ContactRow {
   msgr_msg_id: number
@@ -32,6 +38,8 @@ interface Message {
   msgr_msg_cont_sender_id: number
   msgr_msg_cont_message: string
   msgr_msg_cont_date: string
+  /** 1 = non lu par le destinataire, 0 = lu. */
+  msgr_msg_cont_status?: number | string
   usr_firstname: string
   usr_lastname: string
   usr_image: string
@@ -39,12 +47,44 @@ interface Message {
 interface UserRow { id: number; name: string; login: string; image: string; isOnline: number }
 
 const T = {
-  fr: { contacts: 'Contacts', chat: 'Conversation', empty: 'Sélectionnez un contact pour afficher la conversation.', noContacts: 'Aucun contact.', placeholder: 'Écrivez un message…', send: 'Envoyer', online: 'En ligne', offline: 'Hors ligne', newConvo: 'Nouvelle conversation', searchUser: 'Rechercher un utilisateur…', noUser: 'Aucun utilisateur trouvé.', back: 'Retour', typeToSearch: 'Tapez pour rechercher un utilisateur.' },
-  en: { contacts: 'Contacts', chat: 'Chat', empty: 'Please select a contact to display the conversation.', noContacts: 'No contact.', placeholder: 'Write a message…', send: 'Send', online: 'Online', offline: 'Offline', newConvo: 'New conversation', searchUser: 'Search a user…', noUser: 'No user found.', back: 'Back', typeToSearch: 'Type to search for a user.' },
+  fr: { contacts: 'Contacts', chat: 'Conversation', empty: 'Sélectionnez un contact pour afficher la conversation.', noContacts: 'Aucun contact.', placeholder: 'Écrivez un message…', send: 'Envoyer', online: 'En ligne', offline: 'Hors ligne', newConvo: 'Nouvelle conversation', searchUser: 'Rechercher un utilisateur…', noUser: 'Aucun utilisateur trouvé.', back: 'Retour', typeToSearch: 'Tapez pour rechercher un utilisateur.', noMessages: 'Aucun message pour le moment.' },
+  en: { contacts: 'Contacts', chat: 'Chat', empty: 'Please select a contact to display the conversation.', noContacts: 'No contact.', placeholder: 'Write a message…', send: 'Send', online: 'Online', offline: 'Offline', newConvo: 'New conversation', searchUser: 'Search a user…', noUser: 'No user found.', back: 'Back', typeToSearch: 'Type to search for a user.', noMessages: 'No message yet.' },
 }
 function lang(): 'fr' | 'en' {
   const l = (typeof document !== 'undefined' ? document.documentElement.lang : 'en') || 'en'
   return l.slice(0, 2).toLowerCase() === 'fr' ? 'fr' : 'en'
+}
+
+/**
+ * Écarte les lignes FANTÔMES de getConversation. La requête legacy joint le contenu en LEFT JOIN
+ * (MelisMessengerMsgTable::getConversationWithLimit), donc une conversation SANS message renvoie
+ * quand même UNE ligne, colonnes de contenu et d'utilisateur à NULL → une bulle vide « null null ».
+ * On ne garde que les lignes portant un vrai message.
+ */
+function realMessages(rows: Message[] | null | undefined): Message[] {
+  return (rows || []).filter((m) => m?.msgr_msg_cont_id != null && m.msgr_msg_cont_message != null)
+}
+
+/** « Prénom Nom » de l'expéditeur, tolérant aux colonnes nulles (utilisateur supprimé). */
+function senderName(m: Message): string {
+  return [m.usr_firstname, m.usr_lastname].filter(Boolean).join(' ').trim()
+}
+
+/**
+ * Marque la conversation comme lue côté serveur (statut 0 sur les messages des autres), puis
+ * prévient la cloche du topbar pour qu'elle recompte immédiatement — sans quoi le badge de
+ * notifications restait affiché jusqu'au prochain polling (60 s), voire indéfiniment.
+ */
+async function markConversationRead(convoId: number): Promise<void> {
+  try {
+    await fetch(URL_STATUS, {
+      method: 'POST',
+      headers: { ...H, 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'include',
+      body: new URLSearchParams({ id: String(convoId) }),
+    })
+  } catch { /* le badge se resynchronisera au prochain polling */ }
+  window.dispatchEvent(new CustomEvent(UNREAD_EVENT))
 }
 
 async function getJson<T>(url: string): Promise<T | null> {
@@ -79,12 +119,38 @@ export default function MessengerTab() {
     if (d?.data) setContacts(d.data)
   }, [])
 
-  const loadConvo = useCallback(async (convoId: number) => {
+  /**
+   * Charge une conversation. `markRead` UNIQUEMENT sur une ouverture explicite par l'utilisateur
+   * (clic sur un contact / sélection d'office à l'ouverture de l'onglet) — JAMAIS depuis le
+   * polling : un message arrivé pendant que l'onglet dort dans un onglet navigateur en arrière-plan
+   * serait marqué lu sans avoir jamais été vu, et le destinataire ne serait jamais notifié.
+   * C'est exactement ce que fait le tool legacy (mark-read sur clic seulement).
+   */
+  const loadConvo = useCallback(async (convoId: number, markRead = false) => {
     const d = await getJson<{ data: Message[]; user_id: number }>(`${URL_CONVO}/${convoId}?limit=50&offset=0`)
-    if (d) { setMessages(d.data || []); setMeId(d.user_id) }
+    if (!d) return
+    const rows = realMessages(d.data)
+    setMessages(rows)
+    setMeId(d.user_id)
+    if (!markRead) return
+    // On ne poste que s'il reste vraiment du non-lu reçu (évite une requête inutile).
+    const unread = rows.some((m) => Number(m.msgr_msg_cont_status) === 1 && Number(m.msgr_msg_cont_sender_id) !== Number(d.user_id))
+    if (unread) markConversationRead(convoId)
   }, [])
 
   useEffect(() => { loadContacts() }, [loadContacts])
+
+  // À l'ouverture de l'onglet, sélectionne d'office la conversation la plus récente (la liste est
+  // triée par date décroissante) : c'est l'usage attendu d'une messagerie, et cela marque cette
+  // conversation lue → le badge de la cloche tombe dès qu'on ouvre le Messenger. Une seule fois
+  // par montage (le polling ne doit pas voler la sélection de l'utilisateur).
+  const autoOpened = useRef(false)
+  useEffect(() => {
+    if (autoOpened.current || activeConvo != null || contacts.length === 0) return
+    autoOpened.current = true
+    openContact(contacts[0])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contacts])
   useEffect(() => { getJson<{ interval: number }>(URL_INTERVAL).then((d) => { if (d?.interval) setPollMs(d.interval) }) }, [])
 
   // Polling : rafraîchit la conversation ouverte + la liste des contacts.
@@ -100,7 +166,7 @@ export default function MessengerTab() {
     setActivePeer(info ? { name: info.name, image: info.image } : null)
     setActiveConvo(c.msgr_msg_id)
     setMessages([])
-    loadConvo(c.msgr_msg_id)
+    loadConvo(c.msgr_msg_id, true) // ouverture explicite → marque lu
   }
 
   function openNewConvoPanel() {
@@ -157,7 +223,8 @@ export default function MessengerTab() {
       const body = new URLSearchParams({ msgr_msg_id: String(activeConvo), msgr_msg_cont_message: msg })
       const r = await fetch(URL_SEND, { method: 'POST', headers: { ...H, 'Content-Type': 'application/x-www-form-urlencoded' }, credentials: 'include', body })
       const d = await r.json().catch(() => null)
-      if (d?.success) { setText(''); await loadConvo(activeConvo); loadContacts() }
+      // Répondre implique avoir lu : on marque lu au passage.
+      if (d?.success) { setText(''); await loadConvo(activeConvo, true); loadContacts() }
     } finally { setSending(false) }
   }
 
@@ -227,13 +294,14 @@ export default function MessengerTab() {
         ) : (
           <>
             <div style={S.messages}>
+              {messages.length === 0 && <div style={S.muted}>{t.noMessages}</div>}
               {messages.map((m) => {
                 const mine = meId != null && m.msgr_msg_cont_sender_id === meId
                 return (
                   <div key={m.msgr_msg_cont_id} style={{ ...S.msgRow, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
                     {!mine && <img src={m.usr_image} alt="" style={S.msgAvatar} />}
                     <div style={{ ...S.bubble, ...(mine ? S.bubbleMine : S.bubbleTheirs) }}>
-                      <div style={S.bubbleMeta}>{mine ? '' : `${m.usr_firstname} ${m.usr_lastname} · `}{m.msgr_msg_cont_date}</div>
+                      <div style={S.bubbleMeta}>{mine || !senderName(m) ? '' : `${senderName(m)} · `}{m.msgr_msg_cont_date}</div>
                       <div dangerouslySetInnerHTML={{ __html: m.msgr_msg_cont_message }} />
                     </div>
                   </div>

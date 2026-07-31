@@ -222,6 +222,7 @@ class MelisMessengerController extends MelisAbstractActionController
      */
     public function getConversationAction()
     {
+        $this->releaseSessionLock(); // lecture seule (cf. releaseSessionLock)
         $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         $id = (int) $this->params()->fromRoute('id', 0);
         $limit = (int) $this->params()->fromQuery('limit', 10);
@@ -263,7 +264,11 @@ class MelisMessengerController extends MelisAbstractActionController
     public function getNewMessageAction()
     {
         $msgService =  $this->getServiceManager()->get('MelisMessengerService');
-        $message = $msgService->getNewMessage($this->getCurrentUserId());
+        $userId = $this->getCurrentUserId();
+        // Polling du badge de notifications : lecture seule → on rend la main tout de suite pour ne
+        // pas rester coincé derrière les autres requêtes de la session (cf. releaseSessionLock).
+        $this->releaseSessionLock();
+        $message = $msgService->getNewMessage($userId);
         foreach($message AS $key => $val)
         {
 //            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
@@ -462,6 +467,7 @@ class MelisMessengerController extends MelisAbstractActionController
     public function getContactListByDateAction()
     {
         $userId     = $this->getCurrentUserId();
+        $this->releaseSessionLock(); // lecture seule (cf. releaseSessionLock)
         $msgService = $this->getServiceManager()->get('MelisMessengerService');
         $convoIds   = $this->prepareConversationId($userId);
 
@@ -577,6 +583,28 @@ class MelisMessengerController extends MelisAbstractActionController
      * Function to return the current user ID
      * @return Int user ID
      */
+    /**
+     * Libère le verrou de session PHP (lecture seule à partir d'ici).
+     *
+     * Toutes les requêtes portant le même cookie de session sont sérialisées par le verrou du
+     * fichier de session : un polling de notifications (getNewMessage, toutes les 10 s) se retrouvait
+     * DERRIÈRE tout ce que le back-office avait en vol (rendus d'iframes d'outils, plugins du
+     * dashboard…). Mesuré sur dev6 : 0,14 s à vide, 2,1 s derrière 6 rendus concurrents — d'où
+     * l'impression que la notification « passe toujours en dernier ».
+     *
+     * Ces actions ne font que LIRE (auth + requêtes SQL) ; `$_SESSION` reste lisible après la
+     * fermeture, seule l'ÉCRITURE de session est interdite ensuite. Même correctif que
+     * MelisReactApiController::releaseSessionLock() et PluginViewController::dashboardPluginPageAction().
+     *
+     * ⚠️ À n'appeler QUE dans une action en lecture seule, et seulement après avoir lu l'identité.
+     */
+    private function releaseSessionLock(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+    }
+
     private function getCurrentUserId()
     {
         $userId = null;

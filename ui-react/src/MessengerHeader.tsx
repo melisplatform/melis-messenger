@@ -15,7 +15,20 @@ const ACCOUNT_ROUTE = '/melis-core/account' // host route for the user profile (
 const PROFILE_FRAME_TITLE = 'meliscore_user_profile' // ZoneFrames sets iframe title = melisKey
 const MESSENGER_TAB_HREF = '#id_melismessenger_tool' // the dynamically-added Messenger tab link
 const NEW_MESSAGES_URL = '/melis/MelisMessenger/MelisMessenger/getNewMessage'
+// Intervalle de polling : valeur PLATEFORME (`msg_interval` de melis-messenger/config/app.interface.php,
+// 60 s par défaut), lue au boot comme le fait le tool legacy. `POLL_MS` n'est que le repli.
 const POLL_MS = 60_000
+const INTERVAL_URL = '/melis/MelisMessenger/MelisMessenger/getMsgTimeInterval'
+// Plafond côté React : le badge est TOUJOURS visible dans le topbar, il ne peut pas se contenter du
+// rythme plateforme (60 s), qui donne l'impression que les notifications arrivent très en retard.
+// On prend donc min(config, 10 s) — une config plus agressive reste respectée, une config à 60 s est
+// ramenée à 10 s. Le tool legacy garde son propre rythme (config inchangée).
+const POLL_CEILING_MS = 10_000
+// Émis par l'onglet Messenger dès qu'une conversation est marquée lue → recompte immédiat.
+const UNREAD_EVENT = 'melis-messenger-unread-changed'
+// Anti-rebond des recomptes déclenchés par le focus (revenir sur l'onglet navigateur ne doit pas
+// pouvoir marteler l'endpoint, qui sérialise sur le verrou de session PHP).
+const FOCUS_MIN_GAP_MS = 5_000
 
 async function fetchNewCount(): Promise<number> {
   try {
@@ -108,17 +121,81 @@ function ensureMessengerReady() {
   }, 500)
 }
 
+// Dernier compteur connu, conservé pour l'affichage IMMÉDIAT au boot (cf. readCachedCount).
+const CACHE_KEY = 'melis-messenger-unread'
+const CACHE_MAX_AGE_MS = 30 * 60 * 1000
+
+/**
+ * Compteur de la dernière session d'affichage. Le 1ᵉʳ `getNewMessage` part au montage mais passe par
+ * PHP, qui sérialise sur le verrou de session : au boot il attend derrière les requêtes du shell et
+ * du dashboard → l'ICÔNE s'affichait plusieurs secondes AVANT sa pastille. On repart donc de la
+ * dernière valeur connue (sessionStorage, donc effacée à la fermeture de l'onglet), corrigée dès que
+ * le fetch répond. Valeur non sensible (un entier) et péremption à 30 min pour éviter d'afficher
+ * indéfiniment une pastille obsolète.
+ */
+function readCachedCount(): number {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY)
+    if (!raw) return 0
+    const { n, t } = JSON.parse(raw) as { n?: number; t?: number }
+    if (typeof n !== 'number' || typeof t !== 'number') return 0
+    if (Date.now() - t > CACHE_MAX_AGE_MS) return 0
+    return n
+  } catch { return 0 }
+}
+
+function writeCachedCount(n: number): void {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ n, t: Date.now() })) } catch { /* quota/privé */ }
+}
+
 export default function MessengerHeader() {
   const navigate = useNavigate()
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(readCachedCount)
   const [hover, setHover] = useState(false)
 
   useEffect(() => {
     let active = true
-    const tick = () => { fetchNewCount().then((n) => { if (active) setCount(n) }) }
+    let iv = 0
+    let lastFetch = 0
+
+    const tick = () => {
+      lastFetch = Date.now()
+      fetchNewCount().then((n) => { if (!active) return; setCount(n); writeCachedCount(n) })
+    }
+
+    // Retour sur l'onglet navigateur (ou sur la fenêtre) → recompte tout de suite : c'est LE moment
+    // où l'utilisateur regarde la cloche. Sans ça, un message reçu juste après le dernier tour de
+    // polling n'apparaissait qu'au tour suivant (jusqu'à une minute d'attente perçue).
+    const tickOnFocus = () => {
+      if (document.visibilityState === 'hidden') return
+      if (Date.now() - lastFetch < FOCUS_MIN_GAP_MS) return
+      tick()
+    }
+
     tick()
-    const iv = window.setInterval(tick, POLL_MS)
-    return () => { active = false; window.clearInterval(iv) }
+    // Cadence pilotée par la config plateforme, comme le tool legacy (getMsgTimeInterval).
+    fetch(INTERVAL_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { interval?: number } | null) => {
+        if (!active) return
+        const ms = Number(d?.interval)
+        const configured = Number.isFinite(ms) && ms >= 1_000 ? ms : POLL_MS
+        iv = window.setInterval(tick, Math.min(configured, POLL_CEILING_MS))
+      })
+      .catch(() => { if (active) iv = window.setInterval(tick, POLL_CEILING_MS) })
+
+    // Recompte à la demande (conversation marquée lue dans l'onglet) : le badge doit tomber à
+    // l'ouverture de la conversation, pas au tour de polling suivant.
+    window.addEventListener(UNREAD_EVENT, tick)
+    window.addEventListener('focus', tickOnFocus)
+    document.addEventListener('visibilitychange', tickOnFocus)
+    return () => {
+      active = false
+      window.clearInterval(iv)
+      window.removeEventListener(UNREAD_EVENT, tick)
+      window.removeEventListener('focus', tickOnFocus)
+      document.removeEventListener('visibilitychange', tickOnFocus)
+    }
   }, [])
 
   function open() {
