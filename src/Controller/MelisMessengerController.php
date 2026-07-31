@@ -118,27 +118,28 @@ class MelisMessengerController extends MelisAbstractActionController
         $request = $this->getRequest();
         if($request->isPost())
         {
-            $mbrIds = "";
+            $currentUserId = $this->getCurrentUserId();
             $postValues = $request->getPost()->toArray();
-            $postValues['msgr_msg_creator_id'] = $this->getCurrentUserId();
+            $postValues['msgr_msg_creator_id'] = $currentUserId;
             $postValues['msgr_msg_date_created'] = date('Y/m/d H:i:s');
             //get the selected contact / member of the conversation ids
-            $mbrIds = $postValues['mbrids'];
+            $mbrIds = isset($postValues['mbrids']) ? $postValues['mbrids'] : '';
             //remove the mbrids in postValue to match the table field from db before saving
             unset($postValues['mbrids']);
-            
+
+            // SECURITY: mbrids comes straight from the request. Validate every id — cast to int,
+            // drop non-positive, and keep only ids that map to an EXISTING user — before saving any
+            // membership. This prevents forcing arbitrary victims into a conversation, user
+            // enumeration and notification-feed spam. The current user is always added server-side.
+            $validMemberIds = $this->sanitizeMemberIds($mbrIds, $currentUserId);
+
             $convo_id = $messengerService->saveMsg($postValues);
             if($convo_id > 0)
             {
-                //Convert string of member id to array
-                $ids = explode(',', $mbrIds);
-                //include the creator id to insert
-                array_push($ids, $this->getCurrentUserId());
-                
-                for($i = 0; $i < sizeof($ids); $i++)
+                foreach($validMemberIds as $memberId)
                 {
                     //insert the members
-                    $messengerService->saveMsgMembers(["msgr_msg_id"    =>  $convo_id, "msgr_msg_mbr_usr_id" =>  $ids[$i]]);
+                    $messengerService->saveMsgMembers(["msgr_msg_id"    =>  $convo_id, "msgr_msg_mbr_usr_id" =>  $memberId]);
                 }
             }
         }
@@ -191,7 +192,13 @@ class MelisMessengerController extends MelisAbstractActionController
                 $postValues['msgr_msg_cont_sender_id']  = $this->getCurrentUserId();
                 $postValues['msgr_msg_cont_date']       =   date('Y-m-d H:i:s');
                 $postValues['msgr_msg_cont_status']     =   1;
-                
+
+                // Sanitize the (TinyMCE) HTML body server-side so the stored message is safe for BOTH
+                // the React (dangerouslySetInnerHTML) and legacy JS renderers — prevents stored XSS.
+                if (isset($postValues['msgr_msg_cont_message'])) {
+                    $postValues['msgr_msg_cont_message'] = $this->purifyMessageHtml((string) $postValues['msgr_msg_cont_message']);
+                }
+
                 //save the message
                 $res = $messengerService->saveMsgContent($postValues);
                 //check if saving is success
@@ -227,6 +234,11 @@ class MelisMessengerController extends MelisAbstractActionController
         $id = (int) $this->params()->fromRoute('id', 0);
         $limit = (int) $this->params()->fromQuery('limit', 10);
         $offset = (int) $this->params()->fromQuery('offset', 0);
+        // IDOR guard: only allow reading a conversation the current user is a member of.
+        $currentUserId = $this->getCurrentUserId();
+        if (!$id || !in_array($id, $this->prepareConversationId($currentUserId))) {
+            return new JsonModel(['data' => array(), 'user_id' => $currentUserId, 'total' => 0]);
+        }
         //get the convo list
         $totalMessages = count($msgService->getConversation($id));
 
@@ -312,7 +324,8 @@ class MelisMessengerController extends MelisAbstractActionController
         //check if request is post
         if($request->isPost())
         {
-            if($post_var['id'] != "")
+            // IDOR guard: only allow updating status on a conversation the current user belongs to.
+            if($post_var['id'] != "" && in_array((int) $post_var['id'], $this->prepareConversationId($user_id)))
             {
                 $arr = array("msgr_msg_cont_status" => 0);
                 $res = $msgService->updateMessageStatus($arr, $post_var['id'], $user_id);
@@ -561,6 +574,71 @@ class MelisMessengerController extends MelisAbstractActionController
         return $unqId;
     }
     
+    /**
+     * SECURITY: turn the request-supplied comma-separated `mbrids` into a safe, de-duplicated list
+     * of real user ids to add to a conversation.
+     *  - cast each id to int, drop non-positive values,
+     *  - keep only ids that correspond to an EXISTING user (checked against MelisCoreTableUser),
+     *  - always include the current (creator) user id,
+     *  - cap the total member count to guard against abuse.
+     *
+     * @param string $mbrIds        comma-separated member ids from the request
+     * @param int    $currentUserId server-derived current user id (always added)
+     * @return int[]                validated, unique user ids
+     */
+    private function sanitizeMemberIds($mbrIds, $currentUserId)
+    {
+        $maxMembers = 50;
+
+        // Build the set of existing user ids once (same source as the contact list).
+        $users = $this->getServiceManager()->get('MelisCoreTableUser');
+        $existingIds = array();
+        foreach ($users->fetchAll()->toArray() as $user) {
+            $existingIds[(int) $user['usr_id']] = true;
+        }
+
+        $validIds = array();
+
+        // Always include the creator (server-derived, never from the request).
+        $currentUserId = (int) $currentUserId;
+        if ($currentUserId > 0 && isset($existingIds[$currentUserId])) {
+            $validIds[$currentUserId] = $currentUserId;
+        }
+
+        foreach (explode(',', (string) $mbrIds) as $rawId) {
+            $id = (int) trim($rawId);
+            // drop non-positive ids and ids that are not real users
+            if ($id > 0 && isset($existingIds[$id])) {
+                $validIds[$id] = $id;
+            }
+            if (count($validIds) >= $maxMembers) {
+                break;
+            }
+        }
+
+        return array_values($validIds);
+    }
+
+    /**
+     * Sanitize a message HTML body (TinyMCE output) with HTMLPurifier (shipped by MelisCmsComments),
+     * with a conservative strip_tags fallback. Prevents stored XSS via the message body.
+     */
+    private function purifyMessageHtml(string $text): string
+    {
+        try {
+            // MelisCmsComments is a sibling under vendor/melisplatform/. Fully static path (no external input).
+            if (is_file(__DIR__ . '/../../../melis-cms-comments/library/htmlpurifier-4.12.0/library/HTMLPurifier.auto.php')) {
+                require_once __DIR__ . '/../../../melis-cms-comments/library/htmlpurifier-4.12.0/library/HTMLPurifier.auto.php';
+                $config = \HTMLPurifier_Config::createDefault();
+                $config->set('Cache.DefinitionImpl', null);
+                return (new \HTMLPurifier($config))->purify($text);
+            }
+        } catch (\Throwable) {
+            // Conservative fallback if the lib is unavailable.
+        }
+        return strip_tags($text, '<p><br><b><strong><i><em><u><a><ul><ol><li><span><div>');
+    }
+
     /**
      * Function to get the user image.
      * If !empty($msg), it will convert the image to base_64, else just the return the default image
