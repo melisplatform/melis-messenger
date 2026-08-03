@@ -114,6 +114,21 @@ export default function MessengerTab() {
   const [query, setQuery] = useState('')
   const [starting, setStarting] = useState(false)
 
+  // Responsive (ticket 0010864 « no chatbox visible » sur mobile) : le layout côte-à-côte
+  // (contacts 260px + chat 1fr) écrasait le chat à ~0px sur un écran étroit. Sous ~560px on
+  // n'affiche donc plus qu'UNE colonne à la fois — la liste OU la conversation — avec un bouton
+  // retour, comme une messagerie mobile classique.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [narrow, setNarrow] = useState(false)
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list')
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setNarrow(el.clientWidth > 0 && el.clientWidth < 560))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const loadContacts = useCallback(async () => {
     const d = await getJson<{ data: ContactRow[] }>(URL_CONTACTS)
     if (d?.data) setContacts(d.data)
@@ -148,7 +163,9 @@ export default function MessengerTab() {
   useEffect(() => {
     if (autoOpened.current || activeConvo != null || contacts.length === 0) return
     autoOpened.current = true
-    openContact(contacts[0])
+    // Sélection d'office SANS basculer en vue chat sur mobile : on garde la liste de contacts
+    // affichée au 1er rendu (l'utilisateur choisit), tout en marquant lu la conversation récente.
+    openContact(contacts[0], false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contacts])
   useEffect(() => { getJson<{ interval: number }>(URL_INTERVAL).then((d) => { if (d?.interval) setPollMs(d.interval) }) }, [])
@@ -161,12 +178,14 @@ export default function MessengerTab() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ block: 'end' }) }, [messages])
 
-  function openContact(c: ContactRow) {
+  function openContact(c: ContactRow, userInitiated = true) {
     const info = c.usrInfo[0]
     setActivePeer(info ? { name: info.name, image: info.image } : null)
     setActiveConvo(c.msgr_msg_id)
     setMessages([])
     loadConvo(c.msgr_msg_id, true) // ouverture explicite → marque lu
+    // Sur mobile, un clic utilisateur bascule vers la conversation (plein écran).
+    if (userInitiated) setMobileView('chat')
   }
 
   function openNewConvoPanel() {
@@ -206,6 +225,7 @@ export default function MessengerTab() {
         setActivePeer({ name: u.name, image: u.image })
         setActiveConvo(convoId)
         setMessages([])
+        setMobileView('chat')
         setContacts((prev) => prev.some((c) => c.msgr_msg_id === convoId)
           ? prev
           : [{ msgr_msg_id: convoId, contact_id: u.id, usrInfo: [{ name: u.name, isOnline: u.isOnline, image: u.image, message: '' }] }, ...prev])
@@ -229,9 +249,9 @@ export default function MessengerTab() {
   }
 
   return (
-    <div style={S.wrap}>
+    <div ref={wrapRef} style={narrow ? S.wrapNarrow : S.wrap}>
       {/* Contacts */}
-      <div style={S.contactsCol}>
+      <div style={{ ...S.contactsCol, ...(narrow ? { flex: 1 } : null), ...(narrow && mobileView !== 'list' ? { display: 'none' } : null) }}>
         <div style={{ ...S.panelHead, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>{newOpen ? t.newConvo : t.contacts}</span>
           <button type="button" title={newOpen ? t.back : t.newConvo}
@@ -287,8 +307,13 @@ export default function MessengerTab() {
       </div>
 
       {/* Chat */}
-      <div style={S.chatCol}>
-        <div style={S.panelHead}>{activePeer?.name ?? t.chat}</div>
+      <div style={{ ...S.chatCol, ...(narrow ? { flex: 1 } : null), ...(narrow && mobileView !== 'chat' ? { display: 'none' } : null) }}>
+        <div style={{ ...S.panelHead, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {narrow && (
+            <button type="button" onClick={() => setMobileView('list')} title={t.back} style={S.backBtn}>←</button>
+          )}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activePeer?.name ?? t.chat}</span>
+        </div>
         {activeConvo == null ? (
           <div style={S.emptyChat}>{t.empty}</div>
         ) : (
@@ -328,6 +353,9 @@ function stripTags(html: string): string {
 
 const S: Record<string, React.CSSProperties> = {
   wrap: { display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16, minHeight: 460 },
+  // Mobile : une seule colonne, la colonne visible occupe toute la hauteur.
+  wrapNarrow: { display: 'flex', flexDirection: 'column', minHeight: 460 },
+  backBtn: { flexShrink: 0, width: 28, height: 28, lineHeight: '26px', textAlign: 'center', borderRadius: 6, border: '1px solid var(--border,#e4e7ea)', background: 'var(--card,#fff)', color: 'var(--foreground,#1f2937)', fontSize: 16, cursor: 'pointer', padding: 0 },
   contactsCol: { display: 'flex', flexDirection: 'column', border: '1px solid var(--border,#e4e7ea)', borderRadius: 8, overflow: 'hidden' },
   chatCol: { display: 'flex', flexDirection: 'column', border: '1px solid var(--border,#e4e7ea)', borderRadius: 8, overflow: 'hidden', minHeight: 460 },
   panelHead: { padding: '10px 14px', fontWeight: 600, fontSize: 13, background: 'var(--muted,#f4f5f7)', borderBottom: '1px solid var(--border,#e4e7ea)', color: 'var(--foreground,#1f2937)' },
