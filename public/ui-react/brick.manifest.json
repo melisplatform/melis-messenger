@@ -1,0 +1,8 @@
+{
+  "id": "messenger",
+  "route": null,
+  "label": "Messenger",
+  "forwardKey": null,
+  "melisKey": null,
+  "entry": "brick.js"
+}

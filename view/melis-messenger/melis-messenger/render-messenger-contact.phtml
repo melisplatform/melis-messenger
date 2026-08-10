@@ -20,7 +20,7 @@
                     <div class="col-md-8">
                     	<select id="selectUsers" multiple class="form-control">
                         	<?php foreach ($this->users AS $u): ?>
-                        		<option value="<?= $u['usr_id'] ?>"><?= $u['usr_firstname']." ".$u['usr_lastname']; ?></option>
+                        		<option value="<?= $this->escapeHtmlAttr($u['usr_id']) ?>"><?= $this->escapeHtml($u['usr_firstname']." ".$u['usr_lastname']); ?></option>
                         	<?php endforeach;  ?>
                 		</select>
                         <!-- // END col-separator -->

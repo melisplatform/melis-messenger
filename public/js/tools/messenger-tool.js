@@ -812,6 +812,9 @@ var messengerTool = (function(window){
             // key - access name outside    // value - name of function above
             initTokenizePlugin			:	initTokenizePlugin,
             loadContact					:	loadContact,
-            loadMessages				:	loadMessages
+            loadMessages				:	loadMessages,
+            // Exposed so the React shell's topbar messenger icon can open the profile straight on the
+            // Messenger tab (same flow as the legacy header icon): switches to the tab + loads content.
+            openMessengerTab			:	openMessengerTab
         };
 })(window);
