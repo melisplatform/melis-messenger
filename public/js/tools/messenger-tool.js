@@ -280,7 +280,7 @@ var messengerTool = (function(window){
             if ( $('#melis-messenger-messages li').hasClass('empty-notif-li') ) {
                 if ( $(window).width() < 768 ) {
                     //toggle the menu on mobile
-                    $("#id_meliscore_leftmenu").removeAttr('style');
+                    $("#id_meliscore_leftmenu").prop('style', null);
                     $("#id_meliscore_footer").removeClass('slide-left');
 
                     $("#newplugin-cont").toggleClass("show-menu");
@@ -303,7 +303,7 @@ var messengerTool = (function(window){
 
             if( $(window).width() < 768 ) {
                 //toggle the menu on mobile
-                $("#id_meliscore_leftmenu").removeAttr('style');
+                $("#id_meliscore_leftmenu").prop('style', null);
                 $("#id_meliscore_footer").removeClass('slide-left');
 
                 $("#newplugin-cont").toggleClass("show-menu");
@@ -528,8 +528,8 @@ var messengerTool = (function(window){
             $.get('/melis/MelisMessenger/MelisMessenger/getNewMessage', function(data){
                 var ctr         = 0, //count all message
                     tempData    = '';
-
-                    if ( data.messages.length >  0 ) {
+                    
+                    if ( data.messages !== undefined && data.messages.length >  0 ) {
                         msgrBody.find("#melis-messenger-messages").removeClass("empty-notif");
                         msgrBody.find("#melis-messenger-messages").prev().find(".badge").removeClass("hidden");
 
@@ -556,7 +556,7 @@ var messengerTool = (function(window){
                                 $("#melis-messenger-messages").slideToggle();
                                 setTimeout(function () {
                                     //after 3 seconds, we hide the message notification area
-                                    $("#melis-messenger-messages").removeAttr('style');
+                                    $("#melis-messenger-messages").prop('style', null);
                                 }, 3000);
                             }
                         }
@@ -812,6 +812,9 @@ var messengerTool = (function(window){
             // key - access name outside    // value - name of function above
             initTokenizePlugin			:	initTokenizePlugin,
             loadContact					:	loadContact,
-            loadMessages				:	loadMessages
+            loadMessages				:	loadMessages,
+            // Exposed so the React shell's topbar messenger icon can open the profile straight on the
+            // Messenger tab (same flow as the legacy header icon): switches to the tab + loads content.
+            openMessengerTab			:	openMessengerTab
         };
 })(window);

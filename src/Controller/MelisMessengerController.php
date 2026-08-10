@@ -118,27 +118,28 @@ class MelisMessengerController extends MelisAbstractActionController
         $request = $this->getRequest();
         if($request->isPost())
         {
-            $mbrIds = "";
+            $currentUserId = $this->getCurrentUserId();
             $postValues = $request->getPost()->toArray();
-            $postValues['msgr_msg_creator_id'] = $this->getCurrentUserId();
+            $postValues['msgr_msg_creator_id'] = $currentUserId;
             $postValues['msgr_msg_date_created'] = date('Y/m/d H:i:s');
             //get the selected contact / member of the conversation ids
-            $mbrIds = $postValues['mbrids'];
+            $mbrIds = isset($postValues['mbrids']) ? $postValues['mbrids'] : '';
             //remove the mbrids in postValue to match the table field from db before saving
             unset($postValues['mbrids']);
-            
+
+            // SECURITY: mbrids comes straight from the request. Validate every id — cast to int,
+            // drop non-positive, and keep only ids that map to an EXISTING user — before saving any
+            // membership. This prevents forcing arbitrary victims into a conversation, user
+            // enumeration and notification-feed spam. The current user is always added server-side.
+            $validMemberIds = $this->sanitizeMemberIds($mbrIds, $currentUserId);
+
             $convo_id = $messengerService->saveMsg($postValues);
             if($convo_id > 0)
             {
-                //Convert string of member id to array
-                $ids = explode(',', $mbrIds);
-                //include the creator id to insert
-                array_push($ids, $this->getCurrentUserId());
-                
-                for($i = 0; $i < sizeof($ids); $i++)
+                foreach($validMemberIds as $memberId)
                 {
                     //insert the members
-                    $messengerService->saveMsgMembers(["msgr_msg_id"    =>  $convo_id, "msgr_msg_mbr_usr_id" =>  $ids[$i]]);
+                    $messengerService->saveMsgMembers(["msgr_msg_id"    =>  $convo_id, "msgr_msg_mbr_usr_id" =>  $memberId]);
                 }
             }
         }
@@ -191,7 +192,13 @@ class MelisMessengerController extends MelisAbstractActionController
                 $postValues['msgr_msg_cont_sender_id']  = $this->getCurrentUserId();
                 $postValues['msgr_msg_cont_date']       =   date('Y-m-d H:i:s');
                 $postValues['msgr_msg_cont_status']     =   1;
-                
+
+                // Sanitize the (TinyMCE) HTML body server-side so the stored message is safe for BOTH
+                // the React (dangerouslySetInnerHTML) and legacy JS renderers — prevents stored XSS.
+                if (isset($postValues['msgr_msg_cont_message'])) {
+                    $postValues['msgr_msg_cont_message'] = $this->purifyMessageHtml((string) $postValues['msgr_msg_cont_message']);
+                }
+
                 //save the message
                 $res = $messengerService->saveMsgContent($postValues);
                 //check if saving is success
@@ -222,10 +229,16 @@ class MelisMessengerController extends MelisAbstractActionController
      */
     public function getConversationAction()
     {
+        $this->releaseSessionLock(); // lecture seule (cf. releaseSessionLock)
         $msgService =  $this->getServiceManager()->get('MelisMessengerService');
         $id = (int) $this->params()->fromRoute('id', 0);
         $limit = (int) $this->params()->fromQuery('limit', 10);
         $offset = (int) $this->params()->fromQuery('offset', 0);
+        // IDOR guard: only allow reading a conversation the current user is a member of.
+        $currentUserId = $this->getCurrentUserId();
+        if (!$id || !in_array($id, $this->prepareConversationId($currentUserId))) {
+            return new JsonModel(['data' => array(), 'user_id' => $currentUserId, 'total' => 0]);
+        }
         //get the convo list
         $totalMessages = count($msgService->getConversation($id));
 
@@ -263,7 +276,11 @@ class MelisMessengerController extends MelisAbstractActionController
     public function getNewMessageAction()
     {
         $msgService =  $this->getServiceManager()->get('MelisMessengerService');
-        $message = $msgService->getNewMessage($this->getCurrentUserId());
+        $userId = $this->getCurrentUserId();
+        // Polling du badge de notifications : lecture seule → on rend la main tout de suite pour ne
+        // pas rester coincé derrière les autres requêtes de la session (cf. releaseSessionLock).
+        $this->releaseSessionLock();
+        $message = $msgService->getNewMessage($userId);
         foreach($message AS $key => $val)
         {
 //            $message[$key]['msgr_msg_cont_message'] = $this->getTool()->sanitize($message[$key]['msgr_msg_cont_message']);
@@ -307,7 +324,8 @@ class MelisMessengerController extends MelisAbstractActionController
         //check if request is post
         if($request->isPost())
         {
-            if($post_var['id'] != "")
+            // IDOR guard: only allow updating status on a conversation the current user belongs to.
+            if($post_var['id'] != "" && in_array((int) $post_var['id'], $this->prepareConversationId($user_id)))
             {
                 $arr = array("msgr_msg_cont_status" => 0);
                 $res = $msgService->updateMessageStatus($arr, $post_var['id'], $user_id);
@@ -409,6 +427,93 @@ class MelisMessengerController extends MelisAbstractActionController
         return new JsonModel($response);
     }
 
+    /**
+     * RECHERCHE JSON d'utilisateurs (hors soi-même) pour DÉMARRER une nouvelle conversation.
+     * Utilisé par le sélecteur « + » de l'onglet Messenger React. La liste des utilisateurs pouvant
+     * être TRÈS longue, on ne renvoie RIEN sans terme de recherche, et on filtre côté SQL (LIKE nom /
+     * prénom / login) avec une LIMITE. N'altère aucun comportement existant.
+     * @return \Laminas\View\Model\JsonModel
+     */
+    public function getUserListForConversationAction()
+    {
+        $search = trim((string) $this->params()->fromQuery('search', ''));
+        // Pas de recherche → pas de liste (on n'affiche jamais tous les utilisateurs).
+        if ($search === '') {
+            return new JsonModel(array('data' => array()));
+        }
+
+        $me   = (int) $this->getCurrentUserId();
+        $like = '%' . $search . '%';
+        $db   = $this->getServiceManager()->get('Laminas\Db\Adapter\AdapterInterface');
+        $rows = $db->query(
+            "SELECT usr_id, usr_firstname, usr_lastname, usr_login, usr_image, usr_is_online
+             FROM melis_core_user
+             WHERE usr_id <> ?
+               AND (usr_firstname LIKE ? OR usr_lastname LIKE ? OR usr_login LIKE ?
+                    OR CONCAT(usr_firstname, ' ', usr_lastname) LIKE ?)
+             ORDER BY usr_firstname, usr_lastname
+             LIMIT 20",
+            array($me, $like, $like, $like, $like)
+        );
+
+        $data = array();
+        foreach ($rows as $u) {
+            $u = (array) $u;
+            $data[] = array(
+                'id'       => (int) $u['usr_id'],
+                'name'     => trim($u['usr_firstname'] . ' ' . $u['usr_lastname']),
+                'login'    => $u['usr_login'],
+                'image'    => $this->getUserImage($u['usr_image']),
+                'isOnline' => (int) ($u['usr_is_online'] ?? 0),
+            );
+        }
+        return new JsonModel(array('data' => $data));
+    }
+
+    /**
+     * Liste JSON des contacts (conversations existantes) TRIÉE par date du DERNIER message (récent en
+     * haut) — pour l'onglet Messenger React. Le legacy getContactListAction re-trie alphabétiquement ;
+     * on ne le modifie PAS. On réutilise le même service (getContactList, déjà ordonné
+     * msgr_msg_cont_date DESC par la requête getContact) mais SANS le re-tri alpha, et on expose la date.
+     * @return \Laminas\View\Model\JsonModel
+     */
+    public function getContactListByDateAction()
+    {
+        $userId     = $this->getCurrentUserId();
+        $this->releaseSessionLock(); // lecture seule (cf. releaseSessionLock)
+        $msgService = $this->getServiceManager()->get('MelisMessengerService');
+        $convoIds   = $this->prepareConversationId($userId);
+
+        $arr = array();
+        $total = 0;
+        if (!empty($convoIds)) {
+            // Déjà trié msgr_msg_cont_date DESC (1 ligne par conversation via GROUP BY msgr_msg_id).
+            $contactList = $msgService->getContactList($convoIds, $userId);
+            $total = count($contactList);
+            foreach ($contactList as $contact) {
+                if ((int) $userId === (int) $contact['usr_id']) continue;
+                $msgId = $contact['msgr_msg_id'];
+                if (array_key_exists($msgId, $arr)) continue;
+                $arr[$msgId] = array(
+                    'usrInfo' => array(array(
+                        'name'     => trim($contact['usr_firstname'] . ' ' . $contact['usr_lastname']),
+                        'isOnline' => $contact['usr_is_online'],
+                        'image'    => $this->getUserImage($contact['usr_image']),
+                        'message'  => $contact['msgr_msg_cont_message'],
+                    )),
+                    'msgr_msg_id' => $msgId,
+                    'contact_id'  => $contact['usr_id'],
+                    'date'        => $contact['msgr_msg_cont_date'],
+                );
+            }
+        }
+        $data = array_values($arr);
+        // Filet de sécurité : tri décroissant sur la date brute (format SQL, comparable en chaîne).
+        usort($data, function ($a, $b) { return strcmp((string) $b['date'], (string) $a['date']); });
+
+        return new JsonModel(array('data' => $data, 'totalContact' => $total));
+    }
+
     private function mergeArray($array1, $array2){
         if(!empty($array2))
             foreach($array2 as $arr2){
@@ -470,6 +575,71 @@ class MelisMessengerController extends MelisAbstractActionController
     }
     
     /**
+     * SECURITY: turn the request-supplied comma-separated `mbrids` into a safe, de-duplicated list
+     * of real user ids to add to a conversation.
+     *  - cast each id to int, drop non-positive values,
+     *  - keep only ids that correspond to an EXISTING user (checked against MelisCoreTableUser),
+     *  - always include the current (creator) user id,
+     *  - cap the total member count to guard against abuse.
+     *
+     * @param string $mbrIds        comma-separated member ids from the request
+     * @param int    $currentUserId server-derived current user id (always added)
+     * @return int[]                validated, unique user ids
+     */
+    private function sanitizeMemberIds($mbrIds, $currentUserId)
+    {
+        $maxMembers = 50;
+
+        // Build the set of existing user ids once (same source as the contact list).
+        $users = $this->getServiceManager()->get('MelisCoreTableUser');
+        $existingIds = array();
+        foreach ($users->fetchAll()->toArray() as $user) {
+            $existingIds[(int) $user['usr_id']] = true;
+        }
+
+        $validIds = array();
+
+        // Always include the creator (server-derived, never from the request).
+        $currentUserId = (int) $currentUserId;
+        if ($currentUserId > 0 && isset($existingIds[$currentUserId])) {
+            $validIds[$currentUserId] = $currentUserId;
+        }
+
+        foreach (explode(',', (string) $mbrIds) as $rawId) {
+            $id = (int) trim($rawId);
+            // drop non-positive ids and ids that are not real users
+            if ($id > 0 && isset($existingIds[$id])) {
+                $validIds[$id] = $id;
+            }
+            if (count($validIds) >= $maxMembers) {
+                break;
+            }
+        }
+
+        return array_values($validIds);
+    }
+
+    /**
+     * Sanitize a message HTML body (TinyMCE output) with HTMLPurifier (shipped by MelisCmsComments),
+     * with a conservative strip_tags fallback. Prevents stored XSS via the message body.
+     */
+    private function purifyMessageHtml(string $text): string
+    {
+        try {
+            // MelisCmsComments is a sibling under vendor/melisplatform/. Fully static path (no external input).
+            if (is_file(__DIR__ . '/../../../melis-cms-comments/library/htmlpurifier-4.12.0/library/HTMLPurifier.auto.php')) {
+                require_once __DIR__ . '/../../../melis-cms-comments/library/htmlpurifier-4.12.0/library/HTMLPurifier.auto.php';
+                $config = \HTMLPurifier_Config::createDefault();
+                $config->set('Cache.DefinitionImpl', null);
+                return (new \HTMLPurifier($config))->purify($text);
+            }
+        } catch (\Throwable) {
+            // Conservative fallback if the lib is unavailable.
+        }
+        return strip_tags($text, '<p><br><b><strong><i><em><u><a><ul><ol><li><span><div>');
+    }
+
+    /**
      * Function to get the user image.
      * If !empty($msg), it will convert the image to base_64, else just the return the default image
      * @param unknown $img
@@ -491,6 +661,28 @@ class MelisMessengerController extends MelisAbstractActionController
      * Function to return the current user ID
      * @return Int user ID
      */
+    /**
+     * Libère le verrou de session PHP (lecture seule à partir d'ici).
+     *
+     * Toutes les requêtes portant le même cookie de session sont sérialisées par le verrou du
+     * fichier de session : un polling de notifications (getNewMessage, toutes les 10 s) se retrouvait
+     * DERRIÈRE tout ce que le back-office avait en vol (rendus d'iframes d'outils, plugins du
+     * dashboard…). Mesuré sur dev6 : 0,14 s à vide, 2,1 s derrière 6 rendus concurrents — d'où
+     * l'impression que la notification « passe toujours en dernier ».
+     *
+     * Ces actions ne font que LIRE (auth + requêtes SQL) ; `$_SESSION` reste lisible après la
+     * fermeture, seule l'ÉCRITURE de session est interdite ensuite. Même correctif que
+     * MelisReactApiController::releaseSessionLock() et PluginViewController::dashboardPluginPageAction().
+     *
+     * ⚠️ À n'appeler QUE dans une action en lecture seule, et seulement après avoir lu l'identité.
+     */
+    private function releaseSessionLock(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+    }
+
     private function getCurrentUserId()
     {
         $userId = null;
