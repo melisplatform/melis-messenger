@@ -127,10 +127,9 @@ class MelisMessengerController extends MelisAbstractActionController
             //remove the mbrids in postValue to match the table field from db before saving
             unset($postValues['mbrids']);
 
-            // SECURITY: mbrids comes straight from the request. Validate every id — cast to int,
-            // drop non-positive, and keep only ids that map to an EXISTING user — before saving any
-            // membership. This prevents forcing arbitrary victims into a conversation, user
-            // enumeration and notification-feed spam. The current user is always added server-side.
+            // mbrids comes from the request. Validate every id — cast to int, drop non-positive,
+            // and keep only ids that map to an EXISTING user — before saving any membership.
+            // The current user is always added server-side.
             $validMemberIds = $this->sanitizeMemberIds($mbrIds, $currentUserId);
 
             $convo_id = $messengerService->saveMsg($postValues);
@@ -194,7 +193,7 @@ class MelisMessengerController extends MelisAbstractActionController
                 $postValues['msgr_msg_cont_status']     =   1;
 
                 // Sanitize the (TinyMCE) HTML body server-side so the stored message is safe for BOTH
-                // the React (dangerouslySetInnerHTML) and legacy JS renderers — prevents stored XSS.
+                // the React (dangerouslySetInnerHTML) and legacy JS renderers.
                 if (isset($postValues['msgr_msg_cont_message'])) {
                     $postValues['msgr_msg_cont_message'] = $this->purifyMessageHtml((string) $postValues['msgr_msg_cont_message']);
                 }
@@ -234,7 +233,7 @@ class MelisMessengerController extends MelisAbstractActionController
         $id = (int) $this->params()->fromRoute('id', 0);
         $limit = (int) $this->params()->fromQuery('limit', 10);
         $offset = (int) $this->params()->fromQuery('offset', 0);
-        // IDOR guard: only allow reading a conversation the current user is a member of.
+        // Only allow reading a conversation the current user is a member of.
         $currentUserId = $this->getCurrentUserId();
         if (!$id || !in_array($id, $this->prepareConversationId($currentUserId))) {
             return new JsonModel(['data' => array(), 'user_id' => $currentUserId, 'total' => 0]);
@@ -324,7 +323,7 @@ class MelisMessengerController extends MelisAbstractActionController
         //check if request is post
         if($request->isPost())
         {
-            // IDOR guard: only allow updating status on a conversation the current user belongs to.
+            // Only allow updating status on a conversation the current user belongs to.
             if($post_var['id'] != "" && in_array((int) $post_var['id'], $this->prepareConversationId($user_id)))
             {
                 $arr = array("msgr_msg_cont_status" => 0);
@@ -575,7 +574,7 @@ class MelisMessengerController extends MelisAbstractActionController
     }
     
     /**
-     * SECURITY: turn the request-supplied comma-separated `mbrids` into a safe, de-duplicated list
+     * Turn the request-supplied comma-separated `mbrids` into a de-duplicated list
      * of real user ids to add to a conversation.
      *  - cast each id to int, drop non-positive values,
      *  - keep only ids that correspond to an EXISTING user (checked against MelisCoreTableUser),
@@ -621,7 +620,7 @@ class MelisMessengerController extends MelisAbstractActionController
 
     /**
      * Sanitize a message HTML body (TinyMCE output) with HTMLPurifier (shipped by MelisCmsComments),
-     * with a conservative strip_tags fallback. Prevents stored XSS via the message body.
+     * with a conservative strip_tags fallback.
      */
     private function purifyMessageHtml(string $text): string
     {
